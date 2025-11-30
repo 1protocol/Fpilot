@@ -8,6 +8,7 @@ const pageTitles: { [key: string]: string } = {
   '/dashboard': 'Dashboard',
   '/strategies': 'Trading Strategies',
   '/backtesting': 'Backtesting & Validation',
+  '/data-collection': 'Data Collection',
   '/settings': 'Settings',
 };
 
