@@ -46,16 +46,16 @@ export default function AppSidebar() {
             <SidebarFooter>
               <SidebarMenu>
                 <SidebarMenuItem>
-                      <SidebarMenuButton 
-                          asChild
-                          isActive={pathname === '/settings'}
-                          tooltip={{ children: 'Settings' }}
-                      >
-                          <Link href="/settings">
-                            <Settings />
-                            <span>Settings</span>
-                          </Link>
-                      </SidebarMenuButton>
+                    <SidebarMenuButton
+                        asChild
+                        isActive={pathname === '/settings'}
+                        tooltip={{ children: 'Settings' }}
+                    >
+                        <Link href="/settings">
+                          <Settings />
+                          <span>Settings</span>
+                        </Link>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <DropdownMenu>
