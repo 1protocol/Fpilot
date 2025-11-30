@@ -1,3 +1,10 @@
+import AppLayout from "./(app)/layout";
+import DashboardPage from "./(app)/dashboard/page";
+
 export default function Home() {
-  return <></>;
+  return (
+    <AppLayout>
+      <DashboardPage />
+    </AppLayout>
+  );
 }

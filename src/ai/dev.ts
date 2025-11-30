@@ -1,1 +1,6 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/automated-strategy-parameter-tuning.ts';
+import '@/ai/flows/generate-trading-strategy-from-prompt.ts';
+import '@/ai/flows/summarize-market-sentiment.ts';
