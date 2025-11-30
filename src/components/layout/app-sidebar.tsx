@@ -29,18 +29,16 @@ export default function AppSidebar() {
                 <SidebarMenu>
                     {navItems.map((item) => (
                         <SidebarMenuItem key={item.href}>
-                            <Link href={item.href} passHref>
-                                <SidebarMenuButton 
-                                    asChild
-                                    isActive={pathname === item.href}
-                                    tooltip={{ children: item.label }}
-                                >
-                                    <span>
-                                        <item.icon />
-                                        <span>{item.label}</span>
-                                    </span>
-                                </SidebarMenuButton>
-                            </Link>
+                            <SidebarMenuButton 
+                                asChild
+                                isActive={pathname === item.href}
+                                tooltip={{ children: item.label }}
+                            >
+                                <Link href={item.href}>
+                                    <item.icon />
+                                    <span>{item.label}</span>
+                                </Link>
+                            </SidebarMenuButton>
                         </SidebarMenuItem>
                     ))}
                 </SidebarMenu>
@@ -48,18 +46,16 @@ export default function AppSidebar() {
             <SidebarFooter>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <Link href="/settings" passHref>
                       <SidebarMenuButton 
                           asChild
                           isActive={pathname === '/settings'}
                           tooltip={{ children: 'Settings' }}
                       >
-                          <span>
+                          <Link href="/settings">
                             <Settings />
                             <span>Settings</span>
-                          </span>
+                          </Link>
                       </SidebarMenuButton>
-                  </Link>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <DropdownMenu>
