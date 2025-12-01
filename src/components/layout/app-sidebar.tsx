@@ -1,10 +1,15 @@
 'use client'
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Bot, CandlestickChart, LayoutDashboard, Settings, SlidersHorizontal, Database, BarChart } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { Bot, CandlestickChart, LayoutDashboard, Settings, SlidersHorizontal, Database, BarChart, LogOut, LogIn } from 'lucide-react';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { useFirebase } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
+
 
 const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -13,6 +18,60 @@ const navItems = [
     { href: '/backtesting', icon: CandlestickChart, label: 'Backtesting' },
     { href: '/data-collection', icon: Database, label: 'Data Collection' },
 ];
+
+function UserProfile() {
+    const { user, isUserLoading, auth } = useFirebase();
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        if (auth) {
+            await signOut(auth);
+            router.push('/login');
+        }
+    };
+
+    if (isUserLoading) {
+        return <div className="flex items-center gap-2 p-2">
+            <Skeleton className="size-8 rounded-full" />
+            <Skeleton className="h-4 w-24" />
+        </div>
+    }
+
+    if (!user) {
+        return <Button asChild variant="outline" className="w-full">
+            <Link href="/login">
+                <LogIn className="mr-2" />
+                Login
+            </Link>
+        </Button>
+    }
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <SidebarMenuButton tooltip={{ children: "Profile" }}>
+                    <Avatar className="size-7">
+                        <AvatarImage data-ai-hint="person portrait" src={user.photoURL || "https://picsum.photos/seed/user-avatar/40/40"} alt="User Avatar" />
+                        <AvatarFallback>{user.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
+                    </Avatar>
+                    <span className='truncate'>{user.displayName || user.email}</span>
+                </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="right" align="start" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Profile</DropdownMenuItem>
+                <DropdownMenuItem>Billing</DropdownMenuItem>
+                <DropdownMenuItem>Team</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2" />
+                    Log out
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
 
 export default function AppSidebar() {
     const pathname = usePathname();
@@ -23,7 +82,7 @@ export default function AppSidebar() {
                 <div className="flex items-center gap-2 p-2 justify-center group-data-[collapsible=icon]:justify-start">
                     <Bot className="w-8 h-8 text-accent" />
                     <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-                      <h1 className="text-xl font-headline font-bold text-foreground">CryptoSage</h1>
+                        <h1 className="text-xl font-headline font-bold text-foreground">CryptoSage</h1>
                     </div>
                 </div>
             </SidebarHeader>
@@ -31,7 +90,7 @@ export default function AppSidebar() {
                 <SidebarMenu>
                     {navItems.map((item) => (
                         <SidebarMenuItem key={item.href}>
-                            <SidebarMenuButton 
+                            <SidebarMenuButton
                                 asChild
                                 isActive={pathname === item.href}
                                 tooltip={{ children: item.label }}
@@ -46,42 +105,23 @@ export default function AppSidebar() {
                 </SidebarMenu>
             </SidebarContent>
             <SidebarFooter>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                    <SidebarMenuButton
-                        asChild
-                        isActive={pathname === '/settings'}
-                        tooltip={{ children: 'Settings' }}
-                    >
-                        <Link href="/settings">
-                          <Settings />
-                          <span>Settings</span>
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton tooltip={{children: "Profile"}}>
-                          <Avatar className="size-7">
-                              <AvatarImage data-ai-hint="person portrait" src="https://picsum.photos/seed/user-avatar/40/40" alt="User Avatar" />
-                              <AvatarFallback>CS</AvatarFallback>
-                          </Avatar>
-                          <span className='truncate'>User Profile</span>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            asChild
+                            isActive={pathname === '/settings'}
+                            tooltip={{ children: 'Settings' }}
+                        >
+                            <Link href="/settings">
+                                <Settings />
+                                <span>Settings</span>
+                            </Link>
                         </SidebarMenuButton>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent side="right" align="start" className="w-56">
-                          <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>Profile</DropdownMenuItem>
-                          <DropdownMenuItem>Billing</DropdownMenuItem>
-                          <DropdownMenuItem>Team</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>Log out</DropdownMenuItem>
-                      </DropdownMenuContent>
-                  </DropdownMenu>
-                </SidebarMenuItem>
-              </SidebarMenu>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <UserProfile />
+                    </SidebarMenuItem>
+                </SidebarMenu>
             </SidebarFooter>
         </Sidebar>
     );

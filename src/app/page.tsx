@@ -1,10 +1,8 @@
-import AppLayout from "./(app)/layout";
-import DashboardPage from "./(app)/dashboard/page";
+import { redirect } from 'next/navigation';
 
 export default function Home() {
-  return (
-    <AppLayout>
-      <DashboardPage />
-    </AppLayout>
-  );
+  // Redirect to the dashboard as the main landing page for authenticated users,
+  // or to the login page for new users. The logic in app/(app)/layout.tsx
+  // and the middleware will handle the final destination.
+  redirect('/dashboard');
 }
