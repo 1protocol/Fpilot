@@ -27,7 +27,7 @@ export default function BacktestTrades({ tradeData }: BacktestTradesProps) {
       title="Trade Log"
       description="A log of all trades executed during the backtest."
     >
-      <div className="rounded-md border h-80 overflow-y-auto">
+      <div className="rounded-md border h-80 overflow-auto">
         <Table>
           <TableHeader className="sticky top-0 bg-card">
             <TableRow>
