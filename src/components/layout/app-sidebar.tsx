@@ -11,6 +11,7 @@ const navItems = [
     { href: '/strategies', icon: SlidersHorizontal, label: 'Strategies' },
     { href: '/analytics', icon: BarChart, label: 'Analytics' },
     { href: '/backtesting', icon: CandlestickChart, label: 'Backtesting' },
+    { href: '/data-collection', icon: Database, label: 'Data Collection' },
 ];
 
 export default function AppSidebar() {
