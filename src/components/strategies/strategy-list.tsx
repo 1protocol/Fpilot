@@ -5,12 +5,13 @@ import { Button } from "../ui/button"
 import { Loader2, SlidersHorizontal } from "lucide-react"
 import StrategyTuner from "./strategy-tuner"
 
-type Strategy = {
+export type Strategy = {
   id: string;
   name: string;
   asset: string;
   timeframe: string;
   status: string;
+  code?: string;
 };
 
 type StrategyListProps = {
@@ -72,7 +73,7 @@ export default function StrategyList({ strategies, isLoading }: StrategyListProp
                     </TableCell>
                     <TableCell className="text-right">
                       <StrategyTuner strategy={strategy}>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" disabled={!strategy.code}>
                           <SlidersHorizontal className="mr-2 h-4 w-4" />
                           Tune
                         </Button>

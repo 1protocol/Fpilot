@@ -17,6 +17,13 @@ import {
   type AutomatedStrategyParameterTuningOutput,
 } from '@/ai/flows/automated-strategy-parameter-tuning';
 
+import {
+  extractStrategyParameters as extractStrategyParametersFlow,
+  type ExtractStrategyParametersInput,
+  type ExtractStrategyParametersOutput,
+} from '@/ai/flows/extract-strategy-parameters';
+
+
 /**
  * Generates a trading strategy from a user-provided prompt.
  *
@@ -39,4 +46,16 @@ export async function automatedStrategyParameterTuning(
   input: AutomatedStrategyParameterTuningInput
 ): Promise<AutomatedStrategyParameterTuningOutput> {
   return automatedStrategyParameterTuningFlow(input);
+}
+
+/**
+ * Extracts tunable parameters from a trading strategy's code.
+ *
+ * @param input - The input containing the strategy code.
+ * @returns A promise that resolves to the extracted parameters and their suggested ranges.
+ */
+export async function extractStrategyParameters(
+  input: ExtractStrategyParametersInput
+): Promise<ExtractStrategyParametersOutput> {
+    return extractStrategyParametersFlow(input);
 }

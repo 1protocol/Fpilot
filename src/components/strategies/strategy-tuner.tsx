@@ -4,13 +4,15 @@ import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { automatedStrategyParameterTuning, type AutomatedStrategyParameterTuningOutput } from '@/services/strategyService';
+import { automatedStrategyParameterTuning, extractStrategyParameters, type AutomatedStrategyParameterTuningOutput } from '@/services/strategyService';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Bot, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Card, CardContent } from '../ui/card';
+import type { Strategy } from './strategy-list';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   marketConditions: z.string().min(1, { message: "Market conditions are required." }),
@@ -18,10 +20,7 @@ const formSchema = z.object({
 });
 
 type StrategyTunerProps = {
-  strategy: {
-    id: string;
-    name: string;
-  };
+  strategy: Strategy;
   children: React.ReactNode;
 };
 
@@ -29,6 +28,7 @@ export default function StrategyTuner({ strategy, children }: StrategyTunerProps
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<AutomatedStrategyParameterTuningOutput | null>(null);
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -39,15 +39,53 @@ export default function StrategyTuner({ strategy, children }: StrategyTunerProps
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    if (!strategy.code) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Strategy code is not available for tuning.",
+        });
+        return;
+    }
+
     startTransition(async () => {
       setResult(null);
-      const res = await automatedStrategyParameterTuning({
-        strategyName: strategy.name,
-        marketConditions: values.marketConditions,
-        performanceMetric: values.performanceMetric,
-        parameterConstraints: { "rsi_period": "5-25", "stop_loss_pct": "1-5" } // Example constraints
-      });
-      setResult(res);
+      try {
+        // Step 1: Extract parameters dynamically from the code
+        const { parameters: extractedParams } = await extractStrategyParameters({ strategyCode: strategy.code! });
+
+        if (Object.keys(extractedParams).length === 0) {
+            toast({
+                variant: "destructive",
+                title: "Tuning Failed",
+                description: "AI could not identify any tunable parameters in this strategy's code.",
+            });
+            return;
+        }
+
+        // Convert the min/max structure to a string representation for the next flow
+        const parameterConstraints = Object.entries(extractedParams).reduce((acc, [key, value]) => {
+            acc[key] = `${value.min}-${value.max}`;
+            return acc;
+        }, {} as Record<string, any>);
+
+
+        // Step 2: Run the optimization with the extracted parameters
+        const tuningResult = await automatedStrategyParameterTuning({
+          strategyName: strategy.name,
+          marketConditions: values.marketConditions,
+          performanceMetric: values.performanceMetric,
+          parameterConstraints: parameterConstraints,
+        });
+        setResult(tuningResult);
+      } catch (error) {
+          console.error("Tuning failed:", error);
+          toast({
+              variant: "destructive",
+              title: "AI Tuning Failed",
+              description: "An unexpected error occurred while the AI was tuning the strategy.",
+          });
+      }
     });
   };
 
