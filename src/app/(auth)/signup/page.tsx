@@ -14,8 +14,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirebase } from '@/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { useFirebase, setDocumentNonBlocking } from '@/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
@@ -23,6 +24,7 @@ import { Loader2, Bot } from 'lucide-react';
 import Link from 'next/link';
 
 const formSchema = z.object({
+  username: z.string().min(3, { message: 'Username must be at least 3 characters.' }),
   email: z.string().email({ message: 'Invalid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
   confirmPassword: z.string(),
@@ -32,7 +34,7 @@ const formSchema = z.object({
 });
 
 export default function SignupPage() {
-  const { auth } = useFirebase();
+  const { auth, firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +42,7 @@ export default function SignupPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      username: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -47,14 +50,40 @@ export default function SignupPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!auth || !firestore) {
+        toast({
+            variant: "destructive",
+            title: "Sign Up Failed",
+            description: "Firebase is not available. Please try again later.",
+        });
+        return;
+    }
+
     setIsLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      // Update user profile in Firebase Auth
+      await updateProfile(user, { displayName: values.username });
+      
+      // Create user document in Firestore
+      const userDocRef = doc(firestore, "users", user.uid);
+      const userData = {
+        id: user.uid,
+        username: values.username,
+        email: values.email,
+        riskProfileId: null
+      };
+
+      setDocumentNonBlocking(userDocRef, userData, {});
+
       toast({
         title: 'Account Created',
         description: 'You have been successfully signed up.',
       });
       router.push('/dashboard');
+
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -76,6 +105,19 @@ export default function SignupPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your username" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="email"

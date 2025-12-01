@@ -235,8 +235,7 @@
       "required": [
         "id",
         "email",
-        "username",
-        "riskProfileId"
+        "username"
       ]
     },
     "Strategy": {
@@ -421,4 +420,3 @@
     "reasoning": "The Firestore structure is designed to support a professional crypto trading system with a focus on real-time data processing, AI-powered trading signals, automated risk management, and smart order execution. The design prioritizes security, scalability, and debuggability by adhering to the principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters).\n\n**Authorization Independence:**  To achieve authorization independence, key authorization attributes are denormalized. For instance, TradeOrders are stored under `/users/{userId}/trade_orders/{tradeOrderId}` to ensure clear ownership and simplify security rules. The `RiskProfile` also includes the `userId`, facilitating direct association and authorization.\n\n**Structural Segregation:**  Data with different access requirements are stored in separate collections. User-specific data (TradeOrders, RiskProfiles) are stored under the `/users/{userId}` path, while global AI models are kept in the `/ai_models` collection. This segregation simplifies security rules by ensuring that each collection has a homogeneous security posture.\n\n**Access Modeling:** Path-based ownership is used for user-related data. The Membership Map pattern is not explicitly used because collaborative data management isn't specified in the requirements. For global roles, a dedicated collection `/roles_admin/{uid}` could be created to manage admin access if needed.\n\n**QAPs (Rules are not Filters):**  The structure supports secure `list` operations.  Because TradeOrders are organized under `/users/{userId}/trade_orders/{tradeOrderId}`, listing trade orders for a specific user is straightforward and secure.  AI models can be listed globally with appropriate security rules to prevent unauthorized modifications.\n\n**Example of achieving Authorization Independence with denormalization for TradeOrders:**\nEach `TradeOrder` is stored within the `trade_orders` subcollection of a specific user's document (`/users/{userId}/trade_orders/{tradeOrderId}`). The `TradeOrder` document itself includes the `userId` field. This design eliminates the need for `get()` calls in security rules to verify ownership during creation or modification. The security rule can directly check if `request.auth.uid == resource.data.userId` or `request.auth.uid == userId` (from path) ensuring only the authenticated user can manage their own orders.\n\nThis structure provides a robust foundation for building a secure and scalable crypto trading platform."
   }
 }
-    
