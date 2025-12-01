@@ -1,8 +1,8 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import DashboardCard from "../dashboard/dashboard-card"
 import { Badge } from "@/components/ui/badge"
-import { twMerge } from "tailwind-merge";
-import { clsx } from "clsx";
+import { cn } from "@/lib/utils";
+
 
 type Trade = {
   id: string;
@@ -17,10 +17,6 @@ type BacktestTradesProps = {
 };
 
 export default function BacktestTrades({ tradeData }: BacktestTradesProps) {
-
-  function cn(...inputs: import("clsx").ClassValue[]) {
-    return twMerge(clsx(inputs));
-  }
 
   return (
     <DashboardCard

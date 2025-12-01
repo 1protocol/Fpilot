@@ -4,6 +4,7 @@ import { Button } from "../ui/button"
 import { Loader2, SlidersHorizontal } from "lucide-react"
 import StrategyTuner from "./strategy-tuner"
 import { Skeleton } from "../ui/skeleton"
+import { cn } from "@/lib/utils"
 
 export type Strategy = {
   id: string;
@@ -69,7 +70,7 @@ export default function StrategyList({ strategies, isLoading }: StrategyListProp
                 <CardHeader>
                     <div className="flex justify-between items-start">
                         <CardTitle className="font-headline text-lg">{strategy.name}</CardTitle>
-                         <Badge variant={getStatusBadgeVariant(strategy.status)}>{strategy.status}</Badge>
+                         <Badge variant={getStatusBadgeVariant(strategy.status)} className={cn(strategy.status === 'Active' && 'bg-green-600/80')}>{strategy.status}</Badge>
                     </div>
                     <CardDescription>{strategy.asset} &middot; {strategy.timeframe}</CardDescription>
                 </CardHeader>

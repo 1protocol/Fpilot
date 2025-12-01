@@ -10,6 +10,7 @@ import { signOut } from 'firebase/auth';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 
 const navItems = [
@@ -58,7 +59,7 @@ function UserProfile() {
             <DropdownMenuTrigger asChild>
                 <SidebarMenuButton tooltip={{ children: "Profile" }}>
                     <Avatar className="size-7">
-                        <AvatarImage data-ai-hint="person portrait" src={user.photoURL || "https://picsum.photos/seed/user-avatar/40/40"} alt="User Avatar" />
+                        <Image width={40} height={40} data-ai-hint="person portrait" src={user.photoURL || "https://picsum.photos/seed/user-avatar/40/40"} alt="User Avatar" />
                         <AvatarFallback>{user.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
                     </Avatar>
                     <span className='truncate'>{user.displayName || user.email}</span>

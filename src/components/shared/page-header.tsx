@@ -12,7 +12,7 @@ export function PageHeader({ title, description, children }: PageHeaderProps) {
           {title}
         </h1>
         {description && (
-          <p className="text-muted-foreground">{description}</p>
+          <p className="text-lg text-muted-foreground">{description}</p>
         )}
       </div>
       {children && <div className="flex shrink-0 gap-2">{children}</div>}
