@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { predictMarketRegime, type PredictMarketRegimeOutput } from '@/ai/flows/predict-market-regime';
+import { predictMarketRegime, type PredictMarketRegimeOutput } from '@/services/analyticsService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
