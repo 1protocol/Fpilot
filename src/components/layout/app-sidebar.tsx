@@ -5,7 +5,7 @@ import { Bot, CandlestickChart, LayoutDashboard, Settings, SlidersHorizontal, Da
 import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { useFirebase } from '@/firebase';
+import { useUser, useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
@@ -21,13 +21,18 @@ const navItems = [
 ];
 
 function UserProfile() {
-    const { user, isUserLoading, auth } = useFirebase();
+    const { user, isUserLoading } = useUser();
+    const { auth } = useFirebase();
     const router = useRouter();
     const { toast } = useToast();
 
     const handleLogout = async () => {
         if (auth) {
             await signOut(auth);
+            toast({
+                title: 'Logged Out',
+                description: 'You have been successfully logged out.',
+            });
             router.push('/login');
         }
     };
@@ -62,7 +67,7 @@ function UserProfile() {
             <DropdownMenuContent side="right" align="start" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/settings">Profile</Link></DropdownMenuItem>
                 <DropdownMenuItem>Billing</DropdownMenuItem>
                 <DropdownMenuItem>Team</DropdownMenuItem>
                 <DropdownMenuSeparator />
