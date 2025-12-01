@@ -7,8 +7,10 @@ import { usePathname } from 'next/navigation';
 const pageTitles: { [key: string]: string } = {
   '/dashboard': 'Dashboard',
   '/strategies': 'Trading Strategies',
+  '/analytics': 'Analytics Engine',
   '/backtesting': 'Backtesting & Validation',
   '/settings': 'Settings',
+  '/data-collection': 'Data Collection',
 };
 
 export default function AppHeader() {

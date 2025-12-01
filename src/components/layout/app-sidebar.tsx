@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bot, CandlestickChart, LayoutDashboard, Settings, SlidersHorizontal, Database } from 'lucide-react';
+import { Bot, CandlestickChart, LayoutDashboard, Settings, SlidersHorizontal, Database, BarChart } from 'lucide-react';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/strategies', icon: SlidersHorizontal, label: 'Strategies' },
+    { href: '/analytics', icon: BarChart, label: 'Analytics' },
     { href: '/backtesting', icon: CandlestickChart, label: 'Backtesting' },
 ];
 
