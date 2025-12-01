@@ -12,7 +12,7 @@ function SettingsPlaceholder({ title, description, icon: Icon }: { title: string
             <h3 className="text-xl font-semibold font-headline">{title}</h3>
             <p className="mt-2 max-w-sm text-sm text-muted-foreground">{description}</p>
         </div>
-    )
+    );
 }
 
 export default function SettingsPage() {
