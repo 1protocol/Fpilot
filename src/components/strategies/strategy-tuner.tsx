@@ -7,7 +7,6 @@ import * as z from 'zod';
 import { automatedStrategyParameterTuning, type AutomatedStrategyParameterTuningOutput } from '@/services/strategyService';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Bot, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -46,7 +45,7 @@ export default function StrategyTuner({ strategy, children }: StrategyTunerProps
         strategyName: strategy.name,
         marketConditions: values.marketConditions,
         performanceMetric: values.performanceMetric,
-        parameterConstraints: { "rsi_period": "5-25", "stop_loss_pct": "1-5" }
+        parameterConstraints: { "rsi_period": "5-25", "stop_loss_pct": "1-5" } // Example constraints
       });
       setResult(res);
     });
@@ -111,7 +110,7 @@ export default function StrategyTuner({ strategy, children }: StrategyTunerProps
             </Form>
           </div>
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 h-full">
             {isPending ? (
               <div className="flex h-full items-center justify-center text-muted-foreground">
                 <div className="text-center space-y-2"><Loader2 className="mx-auto h-8 w-8 animate-spin" /><p>Finding optimal parameters...</p></div>
@@ -127,8 +126,8 @@ export default function StrategyTuner({ strategy, children }: StrategyTunerProps
                   <p className="text-xs text-muted-foreground mt-1">{result.tuningRationale}</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm">Expected Performance</h4>
-                  <p className="text-xs text-muted-foreground mt-1">Metric value: {result.expectedPerformance}</p>
+                  <h4 className="font-semibold text-sm">Expected Performance Gain</h4>
+                  <p className="text-xs text-muted-foreground mt-1">AI projects an uplift of {result.expectedPerformance.toFixed(2)} in {form.getValues("performanceMetric")}.</p>
                 </div>
               </div>
             ) : (
