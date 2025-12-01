@@ -1,0 +1,184 @@
+/**
+ * Core Philosophy: This ruleset establishes a dual security model. First, it implements a strict user-ownership
+ * model for all sensitive user data, ensuring that users can only access their own information. Second, it
+ * provides public read-only access to global, non-sensitive data like market information and AI models, which
+ * are assumed to be managed by trusted backend services.
+ *
+ * Data Structure: The data is organized into top-level collections for globally accessible data (`market_data`,
+ * `ai_models`) and a primary `/users/{userId}` collection that acts as a root for all user-specific subcollections
+ * (`risk_profiles`, `trade_orders`). This structural segregation simplifies rules by isolating private data trees
+ * from public ones.
+ *
+ * Key Security Decisions:
+ * - User data is strictly private. All paths under `/users/{userId}` are only accessible by the authenticated
+ *   user whose UID matches `{userId}`.
+ * - User enumeration is prohibited by disallowing `list` operations on the top-level `/users` collection.
+ * - Global data collections (`market_data`, `ai_models`, and their subcollections) are publicly readable by any
+ *   client but cannot be written to. This secures them for backend-only modifications.
+ * - Relational integrity is enforced on creation. For example, a new `TradeOrder` document must have its internal
+ *   `userId` field correctly set to match the user path it is being created under. This field is then immutable.
+ *
+ * Denormalization for Authorization: The rules rely on denormalized `userId` fields within user-specific
+ * documents (e.g., `RiskProfile`, `TradeOrder`). This avoids costly and slow `get()` calls to parent documents,
+ * enabling fast, efficient, and secure authorization checks directly on the document being accessed.
+ *
+ * Structural Segregation: The design separates public data (like `/market_data`) from private user-centric
+ * data (like `/users/{userId}/trade_orders`). This clear separation allows for simple, powerful rules that apply
+ * uniformly to entire collections, enhancing both security and performance, especially for list operations.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the fundamental check for data ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Verifies that the document already exists and the user is the owner.
+     * CRITICAL for safe update and delete operations to prevent modifying non-existent data.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * On create, validates that the document's internal 'id' field matches the
+     * user's UID from the path, ensuring relational integrity.
+     */
+    function hasCorrectIdOnCreate(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    /**
+     * On update, ensures the document's internal 'id' field is immutable.
+     */
+    function isIdImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * On create, validates that a subcollection document's internal 'userId' field
+     * matches the user's UID from the path.
+     */
+    function hasCorrectUserIdOnCreate(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    /**
+     * On update, ensures a subcollection document's 'userId' field is immutable.
+     */
+    function isUserIdImmutable() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Publicly readable market data. Writes are disabled for clients,
+     *              as this data is expected to be populated by a trusted backend service.
+     * @path        /market_data/{marketDataId}
+     * @allow       Any user (signed in or not) can read market data documents. `(get)`
+     * @deny        A client application attempts to create, update, or delete market data. `(create)`
+     * @principle   Provides public read access to non-sensitive data while protecting it from client modification.
+     */
+    match /market_data/{marketDataId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description AI model definitions. These are publicly readable but managed by a backend service.
+     *              Client-side writes are prohibited to protect model integrity.
+     * @path        /ai_models/{aiModelId}
+     * @allow       Any user can read the details of an AI model. `(get)`
+     * @deny        A user attempts to modify an existing AI model document. `(update)`
+     * @principle   Protects critical, shared system assets from unauthorized client writes.
+     */
+    match /ai_models/{aiModelId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+
+      /**
+       * @description Trading signals generated by an AI model. They are public to view but cannot
+       *              be created or modified by clients.
+       * @path        /ai_models/{aiModelId}/trading_signals/{tradingSignalId}
+       * @allow       Any user can read a trading signal generated by an AI model. `(get)`
+       * @deny        A user attempts to create a new trading signal. `(create)`
+       * @principle   Maintains data integrity for system-generated content by disallowing client writes.
+       */
+      match /trading_signals/{tradingSignalId} {
+        allow get, list: if true;
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+
+    /**
+     * @description User profile documents. A user can create, read, and update their own document,
+     *              but cannot see or list other users' profiles.
+     * @path        /users/{userId}
+     * @allow       A new user creates their own user profile document. `(create)` `auth.uid == userId`
+     * @deny        An authenticated user tries to list all documents in the /users collection. `(list)`
+     * @principle   Enforces strict user ownership and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && hasCorrectIdOnCreate(userId);
+      allow update: if isExistingOwner(userId) && isIdImmutable();
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description A user's private risk profile. Only the owner of the parent user document
+       *              can access or manage this data.
+       * @path        /users/{userId}/risk_profiles/{riskProfileId}
+       * @allow       The authenticated user creates their own risk profile. `(create)` `auth.uid == userId`
+       * @deny        User 'A' tries to read the risk profile of user 'B'. `(get)` `auth.uid != userId`
+       * @principle   Restricts access to a user's own data tree using path-based security.
+       */
+      match /risk_profiles/{riskProfileId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasCorrectUserIdOnCreate(userId);
+        allow update: if isExistingOwner(userId) && isUserIdImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description A user's private trade orders. Only the user can manage their own orders.
+       * @path        /users/{userId}/trade_orders/{tradeOrderId}
+       * @allow       The authenticated user lists their own past trade orders. `(list)` `auth.uid == userId`
+       * @deny        User 'A' tries to delete a trade order belonging to user 'B'. `(delete)`
+       * @principle   Enforces document ownership for all read and write operations in a user's private subcollection.
+       */
+      match /trade_orders/{tradeOrderId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasCorrectUserIdOnCreate(userId);
+        allow update: if isExistingOwner(userId) && isUserIdImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+  }
+}
