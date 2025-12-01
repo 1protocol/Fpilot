@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { updateProfile } from "firebase/auth";
 import { doc } from "firebase/firestore";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const apiKeys = [
     { id: "1", exchange: "Binance", key: "abc...xyz", status: "Active" },
@@ -58,6 +60,17 @@ export default function SettingsPage() {
         }
     }
 
+    const getStatusBadgeVariant = (status: string) => {
+        switch (status) {
+            case "Active":
+                return "default";
+            case "Expired":
+                return "destructive";
+            default:
+                return "secondary";
+        }
+    };
+
     return (
         <div className="space-y-8">
             <PageHeader
@@ -65,7 +78,7 @@ export default function SettingsPage() {
                 description="Manage your account, API keys, and notification preferences."
             />
             <Tabs defaultValue="profile" className="space-y-6">
-                <TabsList>
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 md:w-max">
                     <TabsTrigger value="profile">Profile</TabsTrigger>
                     <TabsTrigger value="api-keys">API Keys</TabsTrigger>
                     <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -114,7 +127,8 @@ export default function SettingsPage() {
                             </Button>
                         </CardHeader>
                         <CardContent>
-                            <div className="rounded-md border">
+                            {/* Desktop Table View */}
+                            <div className="rounded-md border hidden md:block">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -129,7 +143,9 @@ export default function SettingsPage() {
                                             <TableRow key={key.id}>
                                                 <TableCell className="font-medium">{key.exchange}</TableCell>
                                                 <TableCell className="font-mono">{key.key}</TableCell>
-                                                <TableCell>{key.status}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={getStatusBadgeVariant(key.status)} className={cn(key.status === 'Active' && 'bg-green-600/80')}>{key.status}</Badge>
+                                                </TableCell>
                                                 <TableCell className="text-right">
                                                     <Button variant="ghost" size="icon">
                                                         <Trash2 className="h-4 w-4" />
@@ -139,6 +155,26 @@ export default function SettingsPage() {
                                         ))}
                                     </TableBody>
                                 </Table>
+                            </div>
+                            {/* Mobile Card View */}
+                            <div className="space-y-4 md:hidden">
+                                {apiKeys.map((key) => (
+                                    <Card key={key.id} className="p-4">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <span className="font-semibold text-card-foreground">{key.exchange}</span>
+                                            <Badge variant={getStatusBadgeVariant(key.status)} className={cn(key.status === 'Active' && 'bg-green-600/80')}>{key.status}</Badge>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-xs text-muted-foreground">Public Key</p>
+                                                <p className="font-mono text-sm">{key.key}</p>
+                                            </div>
+                                            <Button variant="ghost" size="icon">
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                ))}
                             </div>
                         </CardContent>
                     </Card>
@@ -154,7 +190,7 @@ export default function SettingsPage() {
                             <div className="space-y-2">
                                 <Label>Email Notifications</Label>
                                 <Select defaultValue="important">
-                                    <SelectTrigger className="w-[280px]">
+                                    <SelectTrigger className="w-full md:w-[280px]">
                                         <SelectValue placeholder="Select frequency" />
                                     </SelectTrigger>
                                     <SelectContent>
