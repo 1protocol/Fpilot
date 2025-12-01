@@ -4,8 +4,19 @@ import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import DashboardCard from "./dashboard-card"
 import { Badge } from "@/components/ui/badge"
+import { Card } from "../ui/card";
 
-const initialOrderData = [
+type Order = {
+  id: string;
+  pair: string;
+  type: string;
+  side: string;
+  amount: string;
+  price: string;
+  status: string;
+};
+
+const initialOrderData: Order[] = [
   { id: 'ORD001', pair: "BTC/USDT", type: "Limit", side: "Buy", amount: "0.5", price: "68,000", status: "Filled" },
   { id: 'ORD002', pair: "ETH/USDT", type: "Market", side: "Sell", amount: "10", price: "3,550", status: "Filled" },
   { id: 'ORD003', pair: "SOL/USDT", type: "Limit", side: "Buy", amount: "100", price: "150", status: "Working" },
@@ -82,12 +93,39 @@ export default function OrderStatus() {
     }
   };
 
+  const OrderCard = ({ order }: { order: Order }) => (
+    <Card className="p-4">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <p className="font-semibold">{order.pair}</p>
+          <p className="text-xs text-muted-foreground">{order.type}</p>
+        </div>
+        <Badge variant={getStatusBadgeVariant(order.status)}>{order.status}</Badge>
+      </div>
+      <div className="grid grid-cols-3 text-sm">
+        <div>
+          <p className="text-xs text-muted-foreground">Side</p>
+          <p className={order.side === 'Buy' ? 'text-green-400' : 'text-red-400'}>{order.side}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Amount</p>
+          <p>{order.amount}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-muted-foreground">Price</p>
+          <p className="font-mono">{order.price}</p>
+        </div>
+      </div>
+    </Card>
+  );
+
   return (
     <DashboardCard
       title="Recent Orders"
       description="Live status of your recent trade executions"
     >
-      <div className="rounded-md border h-64 overflow-y-auto">
+      {/* Desktop Table View */}
+      <div className="rounded-md border h-64 overflow-y-auto hidden md:block">
         <Table>
           <TableHeader className="sticky top-0 bg-card">
             <TableRow>
@@ -114,6 +152,13 @@ export default function OrderStatus() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+       {/* Mobile Card View */}
+       <div className="space-y-3 md:hidden max-h-64 overflow-y-auto">
+        {orders.map((order) => (
+          <OrderCard key={order.id} order={order} />
+        ))}
       </div>
     </DashboardCard>
   )

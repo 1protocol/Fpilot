@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import DashboardCard from "./dashboard-card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils";
+import { Card } from "../ui/card";
 
 type MarketData = {
   pair: string;
@@ -73,7 +74,8 @@ export default function MarketDataTable() {
       title="Live Market Data"
       description="Real-time data from integrated exchanges"
     >
-      <div className="rounded-md border">
+      {/* Desktop Table View */}
+      <div className="rounded-md border hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -105,6 +107,30 @@ export default function MarketDataTable() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="space-y-4 md:hidden">
+        {marketData.map((data) => (
+            <Card key={data.pair + data.exchange} className="p-4">
+                <div className="flex justify-between items-center mb-2">
+                    <span className="font-semibold text-card-foreground">{data.pair}</span>
+                    <Badge variant="outline">{data.exchange}</Badge>
+                </div>
+                <div className="flex justify-between items-baseline">
+                    <span className={cn("font-mono text-lg transition-colors duration-500", {
+                      'text-green-400': data.priceState === 'up',
+                      'text-red-400': data.priceState === 'down'
+                    })}>{formatCurrency(data.price)}</span>
+                    <span className={cn("text-sm", data.change >= 0 ? 'text-green-400' : 'text-red-400')}>
+                        {data.change.toFixed(2)}%
+                    </span>
+                </div>
+                 <div className="text-right text-xs text-muted-foreground mt-1">
+                    Vol: {formatVolume(data.volume)}
+                </div>
+            </Card>
+        ))}
       </div>
     </DashboardCard>
   )
