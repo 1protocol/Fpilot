@@ -1,11 +1,9 @@
 import AppSidebar from '@/components/layout/app-sidebar';
 import AppHeader from '@/components/layout/app-header';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { FirebaseClientProvider } from '@/firebase';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <FirebaseClientProvider>
       <SidebarProvider>
           <AppSidebar />
           <SidebarInset>
@@ -15,6 +13,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
           </SidebarInset>
       </SidebarProvider>
-    </FirebaseClientProvider>
   );
 }
