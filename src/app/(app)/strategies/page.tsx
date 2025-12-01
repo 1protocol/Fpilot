@@ -9,10 +9,13 @@ import { collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { useState } from 'react';
 
 export default function StrategiesPage() {
   const { toast } = useToast();
   const { firestore, user, isUserLoading } = useFirebase();
+  const [activeGeneratorTab, setActiveGeneratorTab] = useState('prompt');
+
 
   const strategiesCollectionRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -47,6 +50,8 @@ export default function StrategiesPage() {
         title: "Strategy Generated",
         description: "Your new strategy has been added to your list."
     });
+
+    setActiveGeneratorTab('generated-code');
   };
 
   if (isUserLoading) {
@@ -85,7 +90,7 @@ export default function StrategiesPage() {
           <StrategyList strategies={strategies || []} isLoading={areStrategiesLoading} />
         </TabsContent>
         <TabsContent value="generate" className="mt-6">
-          <StrategyGenerator onStrategyGenerated={handleStrategyGenerated} />
+          <StrategyGenerator onStrategyGenerated={handleStrategyGenerated} activeTab={activeGeneratorTab} setActiveTab={setActiveGeneratorTab} />
         </TabsContent>
       </Tabs>
     </div>
