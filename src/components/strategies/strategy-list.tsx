@@ -5,15 +5,20 @@ import { Button } from "../ui/button"
 import { SlidersHorizontal } from "lucide-react"
 import StrategyTuner from "./strategy-tuner"
 
-const strategies = [
-  { id: 'STRAT001', name: "RSI Mean Reversion", asset: "BTC/USDT", timeframe: "1H", pnl: "+15.2%", status: "Active" },
-  { id: 'STRAT002', name: "EMA Crossover Momentum", asset: "ETH/USDT", timeframe: "4H", pnl: "+8.9%", status: "Active" },
-  { id: 'STRAT003', name: "On-Chain SOPR Signal", asset: "BTC/USDT", timeframe: "1D", pnl: "-2.1%", status: "Paused" },
-  { id: 'STRAT004', name: "Volatility Breakout", asset: "SOL/USDT", timeframe: "15m", pnl: "+22.5%", status: "Active" },
-  { id: 'STRAT005', name: "Arbitrage Bot", asset: "Multi-asset", timeframe: "1m", pnl: "+5.6%", status: "Error" },
-]
+type Strategy = {
+  id: string;
+  name: string;
+  asset: string;
+  timeframe: string;
+  pnl: string;
+  status: string;
+};
 
-export default function StrategyList() {
+type StrategyListProps = {
+  strategies: Strategy[];
+};
+
+export default function StrategyList({ strategies }: StrategyListProps) {
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case "Active":

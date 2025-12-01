@@ -16,7 +16,11 @@ const formSchema = z.object({
   prompt: z.string().min(10, { message: "Please describe your strategy in at least 10 characters." }),
 });
 
-export default function StrategyGenerator() {
+type StrategyGeneratorProps = {
+  onStrategyGenerated: (prompt: string, code: string) => void;
+};
+
+export default function StrategyGenerator({ onStrategyGenerated }: StrategyGeneratorProps) {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<GenerateTradingStrategyOutput | null>(null);
 
@@ -32,6 +36,9 @@ export default function StrategyGenerator() {
       setResult(null);
       const res = await generateTradingStrategy({ prompt: values.prompt });
       setResult(res);
+      if (res) {
+        onStrategyGenerated(values.prompt, res.strategyCode);
+      }
     });
   };
 
