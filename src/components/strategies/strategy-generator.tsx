@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { generateTradingStrategy, type GenerateTradingStrategyOutput } from '@/ai/flows/generate-trading-strategy-from-prompt';
+import { generateTradingStrategy, type GenerateTradingStrategyOutput } from '@/services/strategyService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';

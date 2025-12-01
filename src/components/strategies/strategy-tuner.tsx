@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { automatedStrategyParameterTuning, type AutomatedStrategyParameterTuningOutput } from '@/ai/flows/automated-strategy-parameter-tuning';
+import { automatedStrategyParameterTuning, type AutomatedStrategyParameterTuningOutput } from '@/services/strategyService';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
