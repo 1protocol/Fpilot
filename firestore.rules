@@ -6,7 +6,7 @@
  *
  * Data Structure: The data is organized into top-level collections for globally accessible data (`market_data`,
  * `ai_models`) and a primary `/users/{userId}` collection that acts as a root for all user-specific subcollections
- * (`risk_profiles`, `trade_orders`). This structural segregation simplifies rules by isolating private data trees
+ * (`risk_profiles`, `trade_orders`, `strategies`). This structural segregation simplifies rules by isolating private data trees
  * from public ones.
  *
  * Key Security Decisions:
@@ -19,7 +19,7 @@
  *   `userId` field correctly set to match the user path it is being created under. This field is then immutable.
  *
  * Denormalization for Authorization: The rules rely on denormalized `userId` fields within user-specific
- * documents (e.g., `RiskProfile`, `TradeOrder`). This avoids costly and slow `get()` calls to parent documents,
+ * documents (e.g., `RiskProfile`, `TradeOrder`, `Strategy`). This avoids costly and slow `get()` calls to parent documents,
  * enabling fast, efficient, and secure authorization checks directly on the document being accessed.
  *
  * Structural Segregation: The design separates public data (like `/market_data`) from private user-centric
@@ -179,6 +179,22 @@ service cloud.firestore {
         allow update: if isExistingOwner(userId) && isUserIdImmutable();
         allow delete: if isExistingOwner(userId);
       }
+
+      /**
+       * @description A user's private trading strategies. Only the user can manage their own strategies.
+       * @path        /users/{userId}/strategies/{strategyId}
+       * @allow       The authenticated user can read, create, update, and delete their own strategies.
+       * @deny        User 'A' tries to access strategies belonging to user 'B'.
+       * @principle   Enforces document ownership for strategies within a user's private subcollection.
+       */
+      match /strategies/{strategyId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasCorrectUserIdOnCreate(userId);
+        allow update: if isExistingOwner(userId) && isUserIdImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
     }
   }
 }
+
+    

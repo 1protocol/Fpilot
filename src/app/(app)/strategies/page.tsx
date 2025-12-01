@@ -1,33 +1,75 @@
 'use client';
 
-import { useState } from 'react';
 import { PageHeader } from '@/components/shared/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StrategyList from '@/components/strategies/strategy-list';
 import StrategyGenerator from '@/components/strategies/strategy-generator';
-
-const initialStrategies = [
-  { id: 'STRAT001', name: "RSI Mean Reversion", asset: "BTC/USDT", timeframe: "1H", pnl: "+15.2%", status: "Active" },
-  { id: 'STRAT002', name: "EMA Crossover Momentum", asset: "ETH/USDT", timeframe: "4H", pnl: "+8.9%", status: "Active" },
-  { id: 'STRAT003', name: "On-Chain SOPR Signal", asset: "BTC/USDT", timeframe: "1D", pnl: "-2.1%", status: "Paused" },
-  { id: 'STRAT004', name: "Volatility Breakout", asset: "SOL/USDT", timeframe: "15m", pnl: "+22.5%", status: "Active" },
-  { id: 'STRAT005', name: "Arbitrage Bot", asset: "Multi-asset", timeframe: "1m", pnl: "+5.6%", status: "Error" },
-];
+import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { collection, serverTimestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function StrategiesPage() {
-  const [strategies, setStrategies] = useState(initialStrategies);
+  const { toast } = useToast();
+  const { firestore, user, isUserLoading } = useFirebase();
+
+  const strategiesCollectionRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return collection(firestore, 'users', user.uid, 'strategies');
+  }, [firestore, user?.uid]);
+
+  const { data: strategies, isLoading: areStrategiesLoading } = useCollection(strategiesCollectionRef);
 
   const handleStrategyGenerated = (prompt: string, code: string) => {
+    if (!strategiesCollectionRef) {
+        toast({
+            variant: "destructive",
+            title: "Error saving strategy",
+            description: "Could not save to database. User not logged in.",
+        });
+        return;
+    }
+
     const newStrategy = {
-      id: `STRAT${String(strategies.length + 1).padStart(3, '0')}`,
       name: `AI: ${prompt.substring(0, 25)}...`,
-      asset: 'Mixed', // Or parse from prompt/code
+      asset: 'Mixed',
       timeframe: 'N/A',
-      pnl: 'N/A',
       status: 'Paused',
+      userId: user?.uid,
+      createdAt: serverTimestamp(),
+      pnl: 'N/A', // Default PnL,
+      code: code,
     };
-    setStrategies(prev => [newStrategy, ...prev]);
+    
+    addDocumentNonBlocking(strategiesCollectionRef, newStrategy);
+
+    toast({
+        title: "Strategy Generated",
+        description: "Your new strategy has been added to your list."
+    });
   };
+
+  if (isUserLoading) {
+    return (
+        <div className="space-y-8">
+             <PageHeader
+                title="Trading Strategies"
+                description="Manage, create, and optimize your automated trading strategies."
+            />
+            <Card>
+                <CardContent className="pt-6">
+                     <div className="flex items-center justify-center p-16">
+                        <div className="text-center space-y-2 text-muted-foreground">
+                            <Loader2 className="mx-auto h-10 w-10 animate-spin" />
+                            <p className="text-lg">Loading Strategies...</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -41,7 +83,7 @@ export default function StrategiesPage() {
           <TabsTrigger value="generate">Generate with AI</TabsTrigger>
         </TabsList>
         <TabsContent value="my-strategies" className="mt-6">
-          <StrategyList strategies={strategies} />
+          <StrategyList strategies={strategies || []} isLoading={areStrategiesLoading} />
         </TabsContent>
         <TabsContent value="generate" className="mt-6">
           <StrategyGenerator onStrategyGenerated={handleStrategyGenerated} />
@@ -50,3 +92,5 @@ export default function StrategiesPage() {
     </div>
   );
 }
+
+    

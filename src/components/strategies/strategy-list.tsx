@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "../ui/button"
-import { SlidersHorizontal } from "lucide-react"
+import { Loader2, SlidersHorizontal } from "lucide-react"
 import StrategyTuner from "./strategy-tuner"
 
 type Strategy = {
@@ -16,9 +16,10 @@ type Strategy = {
 
 type StrategyListProps = {
   strategies: Strategy[];
+  isLoading: boolean;
 };
 
-export default function StrategyList({ strategies }: StrategyListProps) {
+export default function StrategyList({ strategies, isLoading }: StrategyListProps) {
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case "Active":
@@ -50,27 +51,41 @@ export default function StrategyList({ strategies }: StrategyListProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {strategies.map((strategy) => (
-                <TableRow key={strategy.id}>
-                  <TableCell className="font-medium">{strategy.name}</TableCell>
-                  <TableCell>{strategy.asset}</TableCell>
-                  <TableCell>{strategy.timeframe}</TableCell>
-                  <TableCell className={strategy.pnl.startsWith('+') ? 'text-green-400' : 'text-red-400'}>
-                    {strategy.pnl}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(strategy.status)}>{strategy.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <StrategyTuner strategy={strategy}>
-                      <Button variant="ghost" size="sm">
-                        <SlidersHorizontal className="mr-2 h-4 w-4" />
-                        Tune
-                      </Button>
-                    </StrategyTuner>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : strategies.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    You haven&apos;t created any strategies yet.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                strategies.map((strategy) => (
+                  <TableRow key={strategy.id}>
+                    <TableCell className="font-medium">{strategy.name}</TableCell>
+                    <TableCell>{strategy.asset}</TableCell>
+                    <TableCell>{strategy.timeframe}</TableCell>
+                    <TableCell className={strategy.pnl?.startsWith('+') ? 'text-green-400' : 'text-red-400'}>
+                      {strategy.pnl || 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(strategy.status)}>{strategy.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <StrategyTuner strategy={strategy}>
+                        <Button variant="ghost" size="sm">
+                          <SlidersHorizontal className="mr-2 h-4 w-4" />
+                          Tune
+                        </Button>
+                      </StrategyTuner>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
@@ -78,3 +93,5 @@ export default function StrategyList({ strategies }: StrategyListProps) {
     </Card>
   )
 }
+
+    
