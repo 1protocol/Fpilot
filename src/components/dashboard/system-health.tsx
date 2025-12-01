@@ -1,15 +1,40 @@
-import DashboardCard from "./dashboard-card"
+'use client';
 
-const healthMetrics = [
+import { useState, useEffect } from 'react';
+import DashboardCard from "./dashboard-card";
+
+const initialHealthMetrics = [
   { name: "API Connectivity", status: "Operational" },
   { name: "Data Feed (Real-time)", status: "Operational" },
   { name: "Execution Engine", status: "Operational" },
   { name: "Risk Management Module", status: "Operational" },
   { name: "Database Service", status: "Degraded Performance" },
   { name: "AI Model Server", status: "Operational" },
-]
+];
+
+const statuses = ["Operational", "Degraded Performance", "Error"];
 
 export default function SystemHealth() {
+  const [healthMetrics, setHealthMetrics] = useState(initialHealthMetrics);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+        setHealthMetrics(currentMetrics =>
+            currentMetrics.map(metric => {
+                // Give a higher chance to stay "Operational"
+                if (Math.random() > 0.1) {
+                    return { ...metric, status: "Operational" };
+                }
+                // Otherwise, pick a random status
+                const newStatus = statuses[Math.floor(Math.random() * statuses.length)];
+                return { ...metric, status: newStatus };
+            })
+        );
+    }, 7000); // Update every 7 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Operational":

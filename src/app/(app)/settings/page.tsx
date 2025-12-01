@@ -10,13 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useFirebase, setDocumentNonBlocking } from "@/firebase";
+import { useFirebase, setDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { updateProfile } from "firebase/auth";
-import { doc } from "firebase/firestore";
+import { doc, collection, query } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Slider } from "@/components/ui/slider";
 
 const apiKeys = [
     { id: "1", exchange: "Binance", key: "abc...xyz", status: "Active" },
@@ -24,11 +29,35 @@ const apiKeys = [
     { id: "3", exchange: "Coinbase", key: "ghi...rst", status: "Expired" },
 ];
 
+const riskProfileSchema = z.object({
+  valueAtRisk: z.number().min(0).max(100),
+  expectedShortfall: z.number().min(0).max(100),
+  maxPositionSize: z.number().min(0).max(100),
+});
+
 export default function SettingsPage() {
     const { user, auth, firestore, isUserLoading } = useFirebase();
     const { toast } = useToast();
-    const [isSaving, setIsSaving] = useState(false);
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [isSavingRisk, setIsSavingRisk] = useState(false);
     const [displayName, setDisplayName] = useState('');
+    
+    // Risk Profile ID is hardcoded to "default" for simplicity, assuming one profile per user.
+    const riskProfileDocRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return doc(firestore, 'users', user.uid, 'risk_profiles', 'default');
+    }, [user, firestore]);
+
+    const { data: riskProfileData, isLoading: isRiskProfileLoading } = useDoc(riskProfileDocRef);
+
+    const riskForm = useForm<z.infer<typeof riskProfileSchema>>({
+        resolver: zodResolver(riskProfileSchema),
+        defaultValues: {
+            valueAtRisk: 5,
+            expectedShortfall: 10,
+            maxPositionSize: 25,
+        },
+    });
 
     useEffect(() => {
         if (user) {
@@ -36,50 +65,60 @@ export default function SettingsPage() {
         }
     }, [user]);
 
-    const handleProfileSave = async () => {
-        if (!user || !auth || !firestore) {
-            toast({ variant: "destructive", title: "Error", description: "User not logged in." });
-            return;
+    useEffect(() => {
+        if (riskProfileData) {
+            riskForm.reset({
+                valueAtRisk: riskProfileData.valueAtRisk,
+                expectedShortfall: riskProfileData.expectedShortfall,
+                maxPositionSize: riskProfileData.maxPositionSize,
+            });
         }
+    }, [riskProfileData, riskForm]);
 
-        setIsSaving(true);
+
+    const handleProfileSave = async () => {
+        if (!user || !auth || !firestore) return;
+        setIsSavingProfile(true);
         try {
-            // Update Auth profile
             await updateProfile(user, { displayName });
-
-            // Update Firestore document
             const userDocRef = doc(firestore, "users", user.uid);
             setDocumentNonBlocking(userDocRef, { username: displayName }, { merge: true });
-
-            toast({ title: "Profile Updated", description: "Your profile has been updated successfully." });
-
+            toast({ title: "Profile Updated" });
         } catch (error: any) {
             toast({ variant: "destructive", title: "Error", description: error.message });
         } finally {
-            setIsSaving(false);
+            setIsSavingProfile(false);
         }
     }
 
+    const onRiskProfileSave = async (values: z.infer<typeof riskProfileSchema>) => {
+        if (!riskProfileDocRef || !user) return;
+        setIsSavingRisk(true);
+        const dataToSave = {
+            ...values,
+            userId: user.uid,
+            id: 'default'
+        };
+        // setDocumentNonBlocking handles both create and update
+        setDocumentNonBlocking(riskProfileDocRef, dataToSave, { merge: true });
+        toast({ title: "Risk Profile Updated" });
+        setIsSavingRisk(false);
+    };
+
     const getStatusBadgeVariant = (status: string) => {
-        switch (status) {
-            case "Active":
-                return "default";
-            case "Expired":
-                return "destructive";
-            default:
-                return "secondary";
-        }
+        return status === "Active" ? "default" : "destructive";
     };
 
     return (
         <div className="space-y-8">
             <PageHeader
                 title="Settings"
-                description="Manage your account, API keys, and notification preferences."
+                description="Manage your account, API keys, and platform preferences."
             />
             <Tabs defaultValue="profile" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 md:w-max">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 md:w-max">
                     <TabsTrigger value="profile">Profile</TabsTrigger>
+                    <TabsTrigger value="risk-management">Risk Management</TabsTrigger>
                     <TabsTrigger value="api-keys">API Keys</TabsTrigger>
                     <TabsTrigger value="notifications">Notifications</TabsTrigger>
                     <TabsTrigger value="appearance">Appearance</TabsTrigger>
@@ -102,8 +141,8 @@ export default function SettingsPage() {
                                         <Label htmlFor="email">Email</Label>
                                         <Input id="email" type="email" value={user.email || ''} readOnly disabled />
                                     </div>
-                                    <Button onClick={handleProfileSave} disabled={isSaving}>
-                                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    <Button onClick={handleProfileSave} disabled={isSavingProfile}>
+                                        {isSavingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Save Changes
                                     </Button>
                                 </>
@@ -112,6 +151,89 @@ export default function SettingsPage() {
                              )}
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                <TabsContent value="risk-management">
+                    <Form {...riskForm}>
+                        <form onSubmit={riskForm.handleSubmit(onRiskProfileSave)}>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Risk Management</CardTitle>
+                                    <CardDescription>Define your personal risk parameters for AI-driven actions.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-8">
+                                    {isRiskProfileLoading ? <p>Loading risk profile...</p> : (
+                                    <>
+                                        <FormField
+                                            control={riskForm.control}
+                                            name="valueAtRisk"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <div className="flex justify-between items-center">
+                                                        <FormLabel>Value at Risk (VaR)</FormLabel>
+                                                        <span className="text-sm font-mono">{field.value}%</span>
+                                                    </div>
+                                                    <FormControl>
+                                                        <Slider
+                                                            min={0} max={100} step={1}
+                                                            onValueChange={(vals) => field.onChange(vals[0])}
+                                                            value={[field.value]}
+                                                            />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={riskForm.control}
+                                            name="expectedShortfall"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                     <div className="flex justify-between items-center">
+                                                        <FormLabel>Expected Shortfall (CVaR)</FormLabel>
+                                                        <span className="text-sm font-mono">{field.value}%</span>
+                                                    </div>
+                                                    <FormControl>
+                                                        <Slider
+                                                            min={0} max={100} step={1}
+                                                            onValueChange={(vals) => field.onChange(vals[0])}
+                                                            value={[field.value]}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={riskForm.control}
+                                            name="maxPositionSize"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                     <div className="flex justify-between items-center">
+                                                        <FormLabel>Max Position Size</FormLabel>
+                                                        <span className="text-sm font-mono">{field.value}%</span>
+                                                    </div>
+                                                    <FormControl>
+                                                        <Slider
+                                                            min={0} max={100} step={1}
+                                                            onValueahange={(vals) => field.onChange(vals[0])}
+                                                            value={[field.value]}
+                                                            />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </>
+                                    )}
+                                    <Button type="submit" disabled={isSavingRisk || isRiskProfileLoading}>
+                                        {isSavingRisk && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Save Risk Profile
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </form>
+                    </Form>
                 </TabsContent>
 
                 <TabsContent value="api-keys">
@@ -127,7 +249,6 @@ export default function SettingsPage() {
                             </Button>
                         </CardHeader>
                         <CardContent>
-                            {/* Desktop Table View */}
                             <div className="rounded-md border hidden md:block">
                                 <Table>
                                     <TableHeader>
@@ -156,7 +277,6 @@ export default function SettingsPage() {
                                     </TableBody>
                                 </Table>
                             </div>
-                            {/* Mobile Card View */}
                             <div className="space-y-4 md:hidden">
                                 {apiKeys.map((key) => (
                                     <Card key={key.id} className="p-4">

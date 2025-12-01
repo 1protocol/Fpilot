@@ -1,8 +1,11 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Banknote, CandlestickChart, Link as LinkIcon, Newspaper, Twitter } from "lucide-react";
 
-const dataSources = [
+const initialDataSources = [
     {
         title: "Real-time Market Data",
         description: "Live feeds from Binance, Bybit, Coinbase, and Deribit across all timeframes.",
@@ -33,10 +36,31 @@ const dataSources = [
         icon: Banknote,
         status: "Degraded"
     }
-]
+];
 
+const statuses = ["Connected", "Degraded", "Error"];
 
 export default function DataCollectionPage() {
+    const [dataSources, setDataSources] = useState(initialDataSources);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDataSources(currentSources =>
+                currentSources.map(source => {
+                    // Give a higher chance to stay "Connected"
+                    if (Math.random() > 0.1) {
+                         // ~30% chance to change status
+                        const newStatus = Math.random() < 0.3 ? statuses[Math.floor(Math.random() * statuses.length)] : source.status;
+                        return { ...source, status: newStatus };
+                    }
+                    return { ...source, status: "Connected" };
+                })
+            );
+        }, 5000); // Update every 5 seconds
+
+        return () => clearInterval(interval);
+    }, []);
+
     const getStatusColor = (status: string) => {
         switch (status) {
           case "Connected":
@@ -46,7 +70,7 @@ export default function DataCollectionPage() {
           default:
             return "bg-red-500";
         }
-      };
+    };
 
     return (
         <div className="space-y-8">
