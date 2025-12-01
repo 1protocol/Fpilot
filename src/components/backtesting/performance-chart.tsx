@@ -4,21 +4,6 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { ChartConfig, ChartContainer, ChartTooltipContent } from "@/components/ui/chart"
 import DashboardCard from "../dashboard/dashboard-card"
 
-const chartData = [
-  { date: "2023-01-01", equity: 100000 },
-  { date: "2023-02-01", equity: 105200 },
-  { date: "2023-03-01", equity: 110800 },
-  { date: "2023-04-01", equity: 108500 },
-  { date: "2023-05-01", equity: 115600 },
-  { date: "2023-06-01", equity: 121300 },
-  { date: "2023-07-01", equity: 128900 },
-  { date: "2023-08-01", equity: 135400 },
-  { date: "2023-09-01", equity: 140100 },
-  { date: "2023-10-01", equity: 138000 },
-  { date: "2023-11-01", equity: 145500 },
-  { date: "2023-12-01", equity: 142150 },
-]
-
 const chartConfig = {
   equity: {
     label: "Portfolio Equity",
@@ -26,7 +11,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export default function PerformanceChart() {
+type PerformanceChartProps = {
+    chartData: { date: string; equity: number }[];
+};
+
+export default function PerformanceChart({ chartData }: PerformanceChartProps) {
   return (
     <DashboardCard
       title="Performance Curve"
@@ -48,6 +37,7 @@ export default function PerformanceChart() {
               axisLine={false}
               tickMargin={8}
               tickFormatter={(value) => `$${value / 1000}k`}
+              domain={['dataMin - 1000', 'dataMax + 1000']}
             />
             <Tooltip
               cursor={{ stroke: 'hsl(var(--accent))', strokeWidth: 1, strokeDasharray: '3 3' }}

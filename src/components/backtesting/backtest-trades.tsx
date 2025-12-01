@@ -1,18 +1,26 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import DashboardCard from "../dashboard/dashboard-card"
 import { Badge } from "@/components/ui/badge"
+import { twMerge } from "tailwind-merge";
+import { clsx } from "clsx";
 
-const tradeData = [
-  { id: '1', side: "Buy", price: "68,000", size: "0.5", pnl: "+$500" },
-  { id: '2', side: "Sell", price: "68,500", size: "0.5", pnl: "-$250" },
-  { id: '3', side: "Buy", price: "67,800", size: "0.2", pnl: "+$800" },
-  { id: '4', side: "Sell", price: "68,600", size: "0.2", pnl: "+$120" },
-  { id: '5', side: "Buy", price: "69,000", size: "1.0", pnl: "-$1000" },
-  { id: '6', side: "Sell", price: "68,000", size: "1.0", pnl: "+$150" },
-  { id: '7', side: "Buy", price: "68,200", size: "0.3", pnl: "+$300" },
-]
+type Trade = {
+  id: string;
+  side: "Buy" | "Sell";
+  price: string;
+  size: string;
+  pnl: string;
+}
 
-export default function BacktestTrades() {
+type BacktestTradesProps = {
+  tradeData: Trade[];
+};
+
+export default function BacktestTrades({ tradeData }: BacktestTradesProps) {
+
+  function cn(...inputs: import("clsx").ClassValue[]) {
+    return twMerge(clsx(inputs));
+  }
 
   return (
     <DashboardCard
@@ -47,8 +55,4 @@ export default function BacktestTrades() {
       </div>
     </DashboardCard>
   )
-}
-
-function cn(...inputs: import("clsx").ClassValue[]) {
-    return import("tailwind-merge").then(m => m.twMerge(import("clsx").then(c => c.clsx(inputs))));
 }

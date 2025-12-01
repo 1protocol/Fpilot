@@ -5,12 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, PlayCircle } from "lucide-react";
+import { Calendar as CalendarIcon, PlayCircle, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import React from "react";
 
-export default function BacktestRunner() {
+type BacktestRunnerProps = {
+    onRunBacktest: () => void;
+    isRunning: boolean;
+};
+
+export default function BacktestRunner({ onRunBacktest, isRunning }: BacktestRunnerProps) {
     const [date, setDate] = React.useState<Date | undefined>(new Date());
     
     return (
@@ -72,9 +77,18 @@ export default function BacktestRunner() {
                             </PopoverContent>
                         </Popover>
                     </div>
-                    <Button className="w-full">
-                        <PlayCircle className="mr-2 h-4 w-4" />
-                        Run Backtest
+                    <Button className="w-full" onClick={onRunBacktest} disabled={isRunning}>
+                        {isRunning ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Running...
+                            </>
+                        ) : (
+                            <>
+                                <PlayCircle className="mr-2 h-4 w-4" />
+                                Run Backtest
+                            </>
+                        )}
                     </Button>
                 </div>
             </CardContent>
