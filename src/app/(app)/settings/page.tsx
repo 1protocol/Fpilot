@@ -2,7 +2,7 @@
 
 import { PageHeader } from "@/components/shared/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,7 +42,6 @@ export default function SettingsPage() {
     const [isSavingRisk, setIsSavingRisk] = useState(false);
     const [displayName, setDisplayName] = useState('');
     
-    // Risk Profile ID is hardcoded to "default" for simplicity, assuming one profile per user.
     const riskProfileDocRef = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return doc(firestore, 'users', user.uid, 'risk_profiles', 'default');
@@ -99,7 +98,6 @@ export default function SettingsPage() {
             userId: user.uid,
             id: 'default'
         };
-        // setDocumentNonBlocking handles both create and update
         setDocumentNonBlocking(riskProfileDocRef, dataToSave, { merge: true });
         toast({ title: "Risk Profile Updated" });
         setIsSavingRisk(false);
@@ -116,7 +114,7 @@ export default function SettingsPage() {
                 description="Manage your account, API keys, and platform preferences."
             />
             <Tabs defaultValue="profile" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 md:w-max">
+                <TabsList>
                     <TabsTrigger value="profile">Profile</TabsTrigger>
                     <TabsTrigger value="risk-management">Risk Management</TabsTrigger>
                     <TabsTrigger value="api-keys">API Keys</TabsTrigger>
@@ -130,9 +128,9 @@ export default function SettingsPage() {
                             <CardTitle>Profile</CardTitle>
                             <CardDescription>Update your personal information.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent>
                              {isUserLoading ? <p>Loading...</p> : user ? (
-                                <>
+                                <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="name">Full Name</Label>
                                         <Input id="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
@@ -141,15 +139,17 @@ export default function SettingsPage() {
                                         <Label htmlFor="email">Email</Label>
                                         <Input id="email" type="email" value={user.email || ''} readOnly disabled />
                                     </div>
-                                    <Button onClick={handleProfileSave} disabled={isSavingProfile}>
-                                        {isSavingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Save Changes
-                                    </Button>
-                                </>
+                                </div>
                              ) : (
                                 <p className="text-muted-foreground">Please log in to manage your profile.</p>
                              )}
                         </CardContent>
+                        <CardFooter>
+                            <Button onClick={handleProfileSave} disabled={isSavingProfile || isUserLoading}>
+                                {isSavingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Changes
+                            </Button>
+                        </CardFooter>
                     </Card>
                 </TabsContent>
 
@@ -161,7 +161,7 @@ export default function SettingsPage() {
                                     <CardTitle>Risk Management</CardTitle>
                                     <CardDescription>Define your personal risk parameters for AI-driven actions.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-8">
+                                <CardContent className="space-y-6">
                                     {isRiskProfileLoading ? <p>Loading risk profile...</p> : (
                                     <>
                                         <FormField
@@ -171,7 +171,7 @@ export default function SettingsPage() {
                                                 <FormItem>
                                                     <div className="flex justify-between items-center">
                                                         <FormLabel>Value at Risk (VaR)</FormLabel>
-                                                        <span className="text-sm font-mono">{field.value}%</span>
+                                                        <span className="text-sm font-mono text-muted-foreground">{field.value}%</span>
                                                     </div>
                                                     <FormControl>
                                                         <Slider
@@ -191,7 +191,7 @@ export default function SettingsPage() {
                                                 <FormItem>
                                                      <div className="flex justify-between items-center">
                                                         <FormLabel>Expected Shortfall (CVaR)</FormLabel>
-                                                        <span className="text-sm font-mono">{field.value}%</span>
+                                                        <span className="text-sm font-mono text-muted-foreground">{field.value}%</span>
                                                     </div>
                                                     <FormControl>
                                                         <Slider
@@ -211,7 +211,7 @@ export default function SettingsPage() {
                                                 <FormItem>
                                                      <div className="flex justify-between items-center">
                                                         <FormLabel>Max Position Size</FormLabel>
-                                                        <span className="text-sm font-mono">{field.value}%</span>
+                                                        <span className="text-sm font-mono text-muted-foreground">{field.value}%</span>
                                                     </div>
                                                     <FormControl>
                                                         <Slider
@@ -226,11 +226,13 @@ export default function SettingsPage() {
                                         />
                                     </>
                                     )}
-                                    <Button type="submit" disabled={isSavingRisk || isRiskProfileLoading}>
+                                </CardContent>
+                                <CardFooter>
+                                     <Button type="submit" disabled={isSavingRisk || isRiskProfileLoading}>
                                         {isSavingRisk && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Save Risk Profile
                                     </Button>
-                                </CardContent>
+                                </CardFooter>
                             </Card>
                         </form>
                     </Form>
@@ -347,3 +349,5 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+    
