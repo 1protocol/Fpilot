@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlayCircle, Loader2 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
 import { Skeleton } from "../ui/skeleton";
@@ -19,7 +19,7 @@ export default function BacktestRunner({ onRunBacktest, isRunning }: BacktestRun
     const { firestore, user } = useFirebase();
     
     const [selectedStrategyId, setSelectedStrategyId] = useState<string>('');
-    const [selectedAsset, setSelectedAsset] = useState<string>('btc-usdt');
+    const [selectedAsset, setSelectedAsset] = useState<string>('BTC/USDT');
     const [selectedDateRange, setSelectedDateRange] = useState<string>('last-12-months');
 
     const strategiesCollectionRef = useMemoFirebase(() => {
@@ -28,6 +28,12 @@ export default function BacktestRunner({ onRunBacktest, isRunning }: BacktestRun
       }, [firestore, user?.uid]);
     
     const { data: strategies, isLoading: areStrategiesLoading } = useCollection(strategiesCollectionRef);
+
+    useEffect(() => {
+        if (!areStrategiesLoading && strategies && strategies.length > 0 && !selectedStrategyId) {
+            setSelectedStrategyId(strategies[0].id);
+        }
+    }, [areStrategiesLoading, strategies, selectedStrategyId]);
     
     const handleRunClick = () => {
         const selectedStrategy = strategies?.find(s => s.id === selectedStrategyId);
@@ -57,7 +63,6 @@ export default function BacktestRunner({ onRunBacktest, isRunning }: BacktestRun
                             <Select 
                                 value={selectedStrategyId} 
                                 onValueChange={setSelectedStrategyId}
-                                defaultValue={strategies?.[0]?.id}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select a strategy" />
@@ -76,7 +81,7 @@ export default function BacktestRunner({ onRunBacktest, isRunning }: BacktestRun
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Asset</label>
-                        <Select value={selectedAsset} onValueChange={setSelectedAsset} defaultValue="btc-usdt">
+                        <Select value={selectedAsset} onValueChange={setSelectedAsset} defaultValue="BTC/USDT">
                             <SelectTrigger>
                                 <SelectValue placeholder="Select an asset" />
                             </SelectTrigger>

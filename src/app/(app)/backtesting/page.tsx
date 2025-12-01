@@ -35,7 +35,10 @@ export default function BacktestingPage() {
             dateRange: params.dateRange,
         });
 
-        // Transform AI output to match component props
+        if (!simulationResults) {
+          throw new Error("Simulation returned no results.");
+        }
+
         const transformedResults = {
           summaryMetrics: [
             { title: 'Net Profit', value: `$${simulationResults.netProfit.toLocaleString('en-US', { maximumFractionDigits: 0 })}`, icon: 'DollarSign' as const, change: '', changeType: 'neutral' as const },
@@ -55,7 +58,7 @@ export default function BacktestingPage() {
           })),
         };
 
-        setResults(transformedResults as any); // Cast because of icon string literal type issue
+        setResults(transformedResults as any);
 
     } catch (error) {
         console.error("Backtest simulation failed:", error);
