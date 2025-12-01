@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
 import { Slider } from "@/components/ui/slider";
 
 const apiKeys = [
@@ -216,7 +216,7 @@ export default function SettingsPage() {
                                                     <FormControl>
                                                         <Slider
                                                             min={0} max={100} step={1}
-                                                            onValueahange={(vals) => field.onChange(vals[0])}
+                                                            onValueChange={(vals) => field.onChange(vals[0])}
                                                             value={[field.value]}
                                                             />
                                                     </FormControl>
