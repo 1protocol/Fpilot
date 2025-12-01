@@ -12,6 +12,7 @@ import { Bot, Loader2, TrendingUp, TrendingDown, ChevronsLeftRight } from 'lucid
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   cryptocurrency: z.string().min(1, { message: "Please select a cryptocurrency." }),
@@ -33,6 +34,7 @@ const RegimeIcon = ({ regime }: { regime: PredictMarketRegimeOutput['regime'] })
 export default function MarketRegimePredictor() {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<PredictMarketRegimeOutput | null>(null);
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -44,8 +46,17 @@ export default function MarketRegimePredictor() {
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     startTransition(async () => {
       setResult(null);
-      const res = await predictMarketRegime({ cryptocurrency: values.cryptocurrency });
-      setResult(res);
+      try {
+        const res = await predictMarketRegime({ cryptocurrency: values.cryptocurrency });
+        setResult(res);
+      } catch (error) {
+        console.error("Failed to predict market regime:", error);
+        toast({
+            variant: "destructive",
+            title: "Prediction Failed",
+            description: "An error occurred while trying to predict the market regime. Please try again.",
+        });
+      }
     });
   };
 

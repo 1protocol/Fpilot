@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Bot, Loader2, Target, TrendingUp, TrendingDown, Pause } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '../ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   strategyType: z.string().min(1, "Please select a strategy."),
@@ -36,6 +37,7 @@ const SignalIcon = ({ signal }: { signal: GenerateTradingSignalOutput['signal'] 
 export default function SignalGenerator() {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<GenerateTradingSignalOutput | null>(null);
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,12 +51,21 @@ export default function SignalGenerator() {
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     startTransition(async () => {
       setResult(null);
-      const res = await generateTradingSignal({ 
-        strategyType: values.strategyType as any,
-        riskLevel: values.riskLevel as any,
-        cryptocurrency: values.cryptocurrency
-      });
-      setResult(res);
+      try {
+        const res = await generateTradingSignal({ 
+          strategyType: values.strategyType as any,
+          riskLevel: values.riskLevel as any,
+          cryptocurrency: values.cryptocurrency
+        });
+        setResult(res);
+      } catch (error) {
+        console.error("Failed to generate trading signal:", error);
+        toast({
+            variant: "destructive",
+            title: "Signal Generation Failed",
+            description: "An error occurred while trying to generate a trading signal. Please try again.",
+        });
+      }
     });
   };
 
