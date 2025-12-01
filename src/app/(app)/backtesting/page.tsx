@@ -8,58 +8,65 @@ import PerformanceChart from '@/components/backtesting/performance-chart';
 import BacktestTrades from '@/components/backtesting/backtest-trades';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import type { BacktestSimulationOutput } from '@/services/backtestingService';
+import { runBacktestSimulation } from '@/services/backtestingService';
+import { useToast } from '@/hooks/use-toast';
 
-// Helper function to generate mock data
-const generateMockResults = () => {
-  const netProfit = Math.random() * 50000;
-  const sharpeRatio = (Math.random() * 2 + 0.5).toFixed(2);
-  const maxDrawdown = (Math.random() * 10 + 5).toFixed(1);
-  const winRate = (Math.random() * 40 + 50).toFixed(1);
-  const profitFactor = (Math.random() * 2 + 1).toFixed(1);
-  const totalTrades = Math.floor(Math.random() * 150 + 50);
-
-  const chartData = Array.from({ length: 12 }, (_, i) => {
-    const date = new Date(2023, i, 1);
-    const equity = 100000 * (1 + (Math.random() - 0.2) * 0.05 * (i + 1));
-    return {
-      date: date.toISOString().split('T')[0],
-      equity: Math.floor(equity),
-    };
-  });
-
-  const tradeData = Array.from({ length: 20 }, (_, i) => ({
-    id: String(i + 1),
-    side: Math.random() > 0.5 ? 'Buy' : 'Sell',
-    price: (Math.random() * 10000 + 60000).toFixed(2),
-    size: (Math.random() * 1 + 0.1).toFixed(2),
-    pnl: `${Math.random() > 0.5 ? '+' : '-'}$${(Math.random() * 500).toFixed(0)}`,
-  }));
-
-  return {
-    summaryMetrics: [
-      { title: 'Net Profit', value: `$${netProfit.toLocaleString('en-US', { maximumFractionDigits: 2 })}`, icon: 'DollarSign', change: `${(Math.random() > 0.5 ? '+' : '-')}15.2%`, changeType: Math.random() > 0.5 ? 'positive' : 'negative' },
-      { title: 'Sharpe Ratio', value: sharpeRatio, icon: 'TrendingUp', change: `${(Math.random() > 0.5 ? '+' : '-')}0.12`, changeType: Math.random() > 0.5 ? 'positive' : 'negative' },
-      { title: 'Max Drawdown', value: `${maxDrawdown}%`, icon: 'ArrowDown', change: `${(Math.random() > 0.5 ? '+' : '-')}1.1%`, changeType: Math.random() > 0.5 ? 'positive' : 'negative' },
-      { title: 'Win Rate', value: `${winRate}%`, icon: 'Percent', change: `${(Math.random() > 0.5 ? '+' : '-')}3.1%`, changeType: Math.random() > 0.5 ? 'positive' : 'negative' },
-      { title: 'Profit Factor', value: profitFactor, icon: 'Shield', change: `${(Math.random() > 0.5 ? '+' : '-')}0.25`, changeType: Math.random() > 0.5 ? 'positive' : 'negative' },
-      { title: 'Total Trades', value: String(totalTrades), icon: 'BarChart', change: '', changeType: 'neutral' },
-    ],
-    performanceData: chartData,
-    tradeData: tradeData,
-  };
-};
+export type BacktestRunnerParams = {
+    strategyId: string;
+    strategyCode: string;
+    asset: string;
+    dateRange: string;
+}
 
 export default function BacktestingPage() {
   const [isBacktesting, setIsBacktesting] = useState(false);
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<BacktestSimulationOutput | null>(null);
+  const { toast } = useToast();
 
-  const handleRunBacktest = () => {
+  const handleRunBacktest = async (params: BacktestRunnerParams) => {
     setIsBacktesting(true);
     setResults(null);
-    setTimeout(() => {
-      setResults(generateMockResults());
-      setIsBacktesting(false);
-    }, 2500); // Simulate a 2.5 second backtest
+    
+    try {
+        const simulationResults = await runBacktestSimulation({
+            strategyCode: params.strategyCode,
+            asset: params.asset,
+            dateRange: params.dateRange,
+        });
+
+        // Transform AI output to match component props
+        const transformedResults = {
+          summaryMetrics: [
+            { title: 'Net Profit', value: `$${simulationResults.netProfit.toLocaleString('en-US', { maximumFractionDigits: 0 })}`, icon: 'DollarSign' as const, change: '', changeType: 'neutral' as const },
+            { title: 'Sharpe Ratio', value: simulationResults.sharpeRatio.toFixed(2), icon: 'TrendingUp' as const, change: '', changeType: 'neutral' as const },
+            { title: 'Max Drawdown', value: `${simulationResults.maxDrawdown.toFixed(1)}%`, icon: 'ArrowDown' as const, change: '', changeType: 'neutral' as const },
+            { title: 'Win Rate', value: `${simulationResults.winRate.toFixed(1)}%`, icon: 'Percent' as const, change: '', changeType: 'neutral' as const },
+            { title: 'Profit Factor', value: simulationResults.profitFactor.toFixed(1), icon: 'Shield' as const, change: '', changeType: 'neutral' as const },
+            { title: 'Total Trades', value: String(simulationResults.totalTrades), icon: 'BarChart' as const, change: '', changeType: 'neutral' as const },
+          ],
+          performanceData: simulationResults.equityCurveData,
+          tradeData: simulationResults.trades.map((t, i) => ({
+              id: String(i + 1),
+              side: t.side as 'Buy' | 'Sell',
+              price: t.price.toFixed(2),
+              size: t.size.toFixed(3),
+              pnl: `${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(0)}`,
+          })),
+        };
+
+        setResults(transformedResults as any); // Cast because of icon string literal type issue
+
+    } catch (error) {
+        console.error("Backtest simulation failed:", error);
+        toast({
+            variant: "destructive",
+            title: "Backtest Failed",
+            description: "The AI simulation failed to run. Please try again.",
+        });
+    } finally {
+        setIsBacktesting(false);
+    }
   };
 
   return (
@@ -74,7 +81,7 @@ export default function BacktestingPage() {
         <Card className="flex items-center justify-center p-16">
           <div className="text-center space-y-2 text-muted-foreground">
             <Loader2 className="mx-auto h-10 w-10 animate-spin" />
-            <p className="text-lg">Running backtest against historical data...</p>
+            <p className="text-lg">Running AI-powered backtest simulation...</p>
           </div>
         </Card>
       )}

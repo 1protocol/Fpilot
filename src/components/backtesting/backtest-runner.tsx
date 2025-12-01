@@ -3,24 +3,24 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, PlayCircle, Loader2 } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import React from "react";
+import { PlayCircle, Loader2 } from "lucide-react";
+import React, { useState } from "react";
 import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
 import { Skeleton } from "../ui/skeleton";
+import type { BacktestRunnerParams } from "@/app/(app)/backtesting/page";
 
 type BacktestRunnerProps = {
-    onRunBacktest: () => void;
+    onRunBacktest: (params: BacktestRunnerParams) => void;
     isRunning: boolean;
 };
 
 export default function BacktestRunner({ onRunBacktest, isRunning }: BacktestRunnerProps) {
-    const [date, setDate] = React.useState<Date | undefined>(new Date());
     const { firestore, user } = useFirebase();
+    
+    const [selectedStrategyId, setSelectedStrategyId] = useState<string>('');
+    const [selectedAsset, setSelectedAsset] = useState<string>('btc-usdt');
+    const [selectedDateRange, setSelectedDateRange] = useState<string>('last-12-months');
 
     const strategiesCollectionRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -29,6 +29,18 @@ export default function BacktestRunner({ onRunBacktest, isRunning }: BacktestRun
     
     const { data: strategies, isLoading: areStrategiesLoading } = useCollection(strategiesCollectionRef);
     
+    const handleRunClick = () => {
+        const selectedStrategy = strategies?.find(s => s.id === selectedStrategyId);
+        if (selectedStrategy && selectedStrategy.code) {
+            onRunBacktest({
+                strategyId: selectedStrategy.id,
+                strategyCode: selectedStrategy.code,
+                asset: selectedAsset,
+                dateRange: selectedDateRange,
+            });
+        }
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -42,7 +54,11 @@ export default function BacktestRunner({ onRunBacktest, isRunning }: BacktestRun
                         {areStrategiesLoading ? (
                              <Skeleton className="h-10 w-full" />
                         ) : (
-                            <Select defaultValue={strategies?.[0]?.id}>
+                            <Select 
+                                value={selectedStrategyId} 
+                                onValueChange={setSelectedStrategyId}
+                                defaultValue={strategies?.[0]?.id}
+                            >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select a strategy" />
                                 </SelectTrigger>
@@ -60,43 +76,36 @@ export default function BacktestRunner({ onRunBacktest, isRunning }: BacktestRun
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Asset</label>
-                        <Select defaultValue="btc-usdt">
+                        <Select value={selectedAsset} onValueChange={setSelectedAsset} defaultValue="btc-usdt">
                             <SelectTrigger>
                                 <SelectValue placeholder="Select an asset" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="btc-usdt">BTC/USDT</SelectItem>
-                                <SelectItem value="eth-usdt">ETH/USDT</SelectItem>
-                                <SelectItem value="sol-usdt">SOL/USDT</SelectItem>
+                                <SelectItem value="BTC/USDT">BTC/USDT</SelectItem>
+                                <SelectItem value="ETH/USDT">ETH/USDT</SelectItem>
+                                <SelectItem value="SOL/USDT">SOL/USDT</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-2">
                          <label className="text-sm font-medium">Date Range</label>
-                         <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full justify-start text-left font-normal",
-                                    !date && "text-muted-foreground"
-                                )}
-                                >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {date ? format(date, "PPP") : <span>Pick a date</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                mode="single"
-                                selected={date}
-                                onSelect={setDate}
-                                initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
+                         <Select value={selectedDateRange} onValueChange={setSelectedDateRange} defaultValue="last-12-months">
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select date range" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                                <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                                <SelectItem value="last-12-months">Last 12 Months</SelectItem>
+                                <SelectItem value="last-24-months">Last 24 Months</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
-                    <Button className="w-full" onClick={onRunBacktest} disabled={isRunning || areStrategiesLoading || !strategies || strategies.length === 0}>
+                    <Button 
+                        className="w-full" 
+                        onClick={handleRunClick} 
+                        disabled={isRunning || areStrategiesLoading || !strategies || strategies.length === 0 || !selectedStrategyId}
+                    >
                         {isRunning ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
