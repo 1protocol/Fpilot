@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from 'react';
-import { summarizeMarketSentiment } from '@/ai/flows/summarize-market-sentiment';
+import { useState, useTransition, useEffect } from 'react';
+import { summarizeMarketSentiment } from '@/services/sentimentService';
 import DashboardCard from './dashboard-card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '../ui/skeleton';
@@ -23,6 +23,12 @@ export default function SentimentCard() {
     });
   };
 
+  // Fetch initial data for Bitcoin on the client side
+  useEffect(() => {
+    handleSentimentAnalysis('Bitcoin');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <DashboardCard
       title="AI Market Sentiment"
@@ -41,7 +47,7 @@ export default function SentimentCard() {
       }
     >
       <div className="space-y-4">
-        {isPending ? (
+        {isPending && !summary ? (
           <div className="space-y-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
