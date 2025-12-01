@@ -52,7 +52,7 @@ const automatedStrategyParameterTuningPrompt = ai.definePrompt({
 
   Based on the above information, determine the optimal parameters for the trading strategy and provide a rationale for your decisions.
   Make sure that parameters adhere to specified constraints.
-  Output the result in JSON format with keys \"optimalParameters\", \"expectedPerformance\", and \"tuningRationale\".`,
+  Output the result in JSON format with keys "optimalParameters", "expectedPerformance", and "tuningRationale".`,
 });
 
 // Define the Genkit flow for automated strategy parameter tuning
