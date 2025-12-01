@@ -9,6 +9,7 @@ import { useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 
 const navItems = [
@@ -22,6 +23,7 @@ const navItems = [
 function UserProfile() {
     const { user, isUserLoading, auth } = useFirebase();
     const router = useRouter();
+    const { toast } = useToast();
 
     const handleLogout = async () => {
         if (auth) {
