@@ -1,29 +1,27 @@
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CandlestickChart } from 'lucide-react';
+import BacktestRunner from "@/components/backtesting/backtest-runner";
+import BacktestSummary from "@/components/backtesting/backtest-summary";
+import PerformanceChart from "@/components/backtesting/performance-chart";
+import BacktestTrades from "@/components/backtesting/backtest-trades";
 
 export default function BacktestingPage() {
     return (
         <div className="space-y-8">
             <PageHeader
                 title="Backtesting & Validation"
-                description="Test your strategies against historical data."
+                description="Test your strategies against historical data to validate their performance."
             />
-            <div className="flex h-[60vh] items-center justify-center">
-                <Card className="w-full max-w-lg text-center shadow-lg">
-                    <CardHeader>
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
-                            <CandlestickChart className="h-8 w-8 text-primary" />
-                        </div>
-                        <CardTitle className="font-headline text-2xl">Advanced Backtesting Framework</CardTitle>
-                        <CardDescription>Coming Soon</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">
-                            Our institutional-grade backtesting engine is currently under development. Soon, you'll be able to perform walk-forward optimizations, Monte Carlo simulations, robustness testing, and more to rigorously validate your strategies.
-                        </p>
-                    </CardContent>
-                </Card>
+            <BacktestRunner />
+            <div className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-8">
+                <div className="lg:col-span-3">
+                    <BacktestSummary />
+                </div>
+                <div className="lg:col-span-2">
+                    <PerformanceChart />
+                </div>
+                <div className="lg:col-span-1">
+                    <BacktestTrades />
+                </div>
             </div>
         </div>
     );
