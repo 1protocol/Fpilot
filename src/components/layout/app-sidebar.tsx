@@ -1,10 +1,8 @@
 'use client'
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Bot, CandlestickChart, LayoutDashboard, Settings, SlidersHorizontal, Database, BarChart, LogOut, LogIn } from 'lucide-react';
+import { Bot, CandlestickChart, LayoutDashboard, Settings, SlidersHorizontal, Database, BarChart, LogOut, LogIn, User } from 'lucide-react';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { useUser, useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Button } from '../ui/button';
@@ -21,7 +19,7 @@ const navItems = [
     { href: '/data-collection', icon: Database, label: 'Data Collection' },
 ];
 
-function UserProfile() {
+function UserProfileArea() {
     const { user, isUserLoading } = useUser();
     const { auth } = useFirebase();
     const router = useRouter();
@@ -39,46 +37,45 @@ function UserProfile() {
     };
 
     if (isUserLoading) {
-        return <div className="flex items-center gap-2 p-2">
-            <Skeleton className="size-8 rounded-full" />
-            <Skeleton className="h-4 w-24" />
-        </div>
+        return (
+            <div className="flex flex-col items-center gap-2 p-2 group-data-[collapsible=icon]:items-start">
+                <Skeleton className="size-8 rounded-full" />
+                <Skeleton className="h-4 w-24 group-data-[collapsible=icon]:hidden" />
+            </div>
+        );
     }
 
     if (!user) {
-        return <Button asChild variant="outline" className="w-full">
-            <Link href="/login">
-                <LogIn className="mr-2" />
-                Login
-            </Link>
-        </Button>
+        return (
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip={{ children: "Login" }}>
+                    <Link href="/login">
+                        <LogIn className="size-5" />
+                        <span>Login</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+        );
     }
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <SidebarMenuButton tooltip={{ children: "Profile" }}>
-                    <Avatar className="size-7">
-                        <Image width={40} height={40} data-ai-hint="person portrait" src={user.photoURL || "https://picsum.photos/seed/user-avatar/40/40"} alt="User Avatar" />
-                        <AvatarFallback>{user.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
-                    </Avatar>
-                    <span className='truncate'>{user.displayName || user.email}</span>
+        <>
+            <SidebarMenuItem>
+                 <SidebarMenuButton asChild tooltip={{ children: user.displayName || user.email || 'Profile' }}>
+                    <Link href="/settings">
+                        <User className="size-5"/>
+                        <span className='truncate'>{user.displayName || user.email}</span>
+                    </Link>
                 </SidebarMenuButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="right" align="start" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild><Link href="/settings">Profile</Link></DropdownMenuItem>
-                <DropdownMenuItem>Billing</DropdownMenuItem>
-                <DropdownMenuItem>Team</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2" />
-                    Log out
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    )
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleLogout} tooltip={{ children: "Log Out" }}>
+                    <LogOut className="size-5" />
+                    <span>Log Out</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+        </>
+    );
 }
 
 export default function AppSidebar() {
@@ -100,11 +97,12 @@ export default function AppSidebar() {
                         <SidebarMenuItem key={item.href}>
                             <SidebarMenuButton
                                 asChild
-                                isActive={pathname === item.href}
+                                size="lg"
+                                isActive={pathname.startsWith(item.href)}
                                 tooltip={{ children: item.label }}
                             >
                                 <Link href={item.href}>
-                                    <item.icon />
+                                    <item.icon className="size-5" />
                                     <span>{item.label}</span>
                                 </Link>
                             </SidebarMenuButton>
@@ -117,18 +115,17 @@ export default function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton
                             asChild
+                            size="lg"
                             isActive={pathname === '/settings'}
                             tooltip={{ children: 'Settings' }}
                         >
                             <Link href="/settings">
-                                <Settings />
+                                <Settings className="size-5" />
                                 <span>Settings</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <UserProfile />
-                    </SidebarMenuItem>
+                    <UserProfileArea />
                 </SidebarMenu>
             </SidebarFooter>
         </Sidebar>
