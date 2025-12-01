@@ -1,14 +1,12 @@
 'use client'
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Bot, CandlestickChart, LayoutDashboard, Settings, SlidersHorizontal, Database, BarChart, LogOut, LogIn, User } from 'lucide-react';
+import { BrainCircuit, CandlestickChart, LayoutDashboard, Settings, SlidersHorizontal, Database, BarChart, LogOut, User } from 'lucide-react';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { useUser, useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import Image from 'next/image';
 
 
 const navItems = [
@@ -38,7 +36,7 @@ function UserProfileArea() {
 
     if (isUserLoading) {
         return (
-            <div className="flex flex-col items-center gap-2 p-2 group-data-[collapsible=icon]:items-start">
+            <div className="flex items-center gap-3 p-2">
                 <Skeleton className="size-8 rounded-full" />
                 <Skeleton className="h-4 w-24 group-data-[collapsible=icon]:hidden" />
             </div>
@@ -46,35 +44,25 @@ function UserProfileArea() {
     }
 
     if (!user) {
-        return (
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip={{ children: "Login" }}>
-                    <Link href="/login">
-                        <LogIn className="size-5" />
-                        <span>Login</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-        );
+        return null;
     }
 
     return (
-        <>
+        <div className="p-2 space-y-2">
+            <div className="flex items-center gap-3">
+                 <User className="size-8 rounded-full p-1.5 bg-sidebar-accent text-sidebar-accent-foreground"/>
+                 <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+                    <span className="text-sm font-medium truncate">{user.displayName || 'User'}</span>
+                    <span className="text-xs text-sidebar-foreground/70 truncate">{user.email}</span>
+                 </div>
+            </div>
             <SidebarMenuItem>
-                 <SidebarMenuButton asChild tooltip={{ children: user.displayName || user.email || 'Profile' }}>
-                    <Link href="/settings">
-                        <User className="size-5"/>
-                        <span className='truncate'>{user.displayName || user.email}</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleLogout} tooltip={{ children: "Log Out" }}>
+                <SidebarMenuButton onClick={handleLogout} tooltip={{ children: "Log Out" }} size="lg">
                     <LogOut className="size-5" />
                     <span>Log Out</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-        </>
+        </div>
     );
 }
 
@@ -85,7 +73,7 @@ export default function AppSidebar() {
         <Sidebar>
             <SidebarHeader>
                 <div className="flex items-center gap-2 p-2 justify-center group-data-[collapsible=icon]:justify-start">
-                    <Bot className="w-8 h-8 text-accent" />
+                    <BrainCircuit className="w-8 h-8 text-accent" />
                     <div className="flex flex-col group-data-[collapsible=icon]:hidden">
                         <h1 className="text-xl font-headline font-bold text-foreground">CryptoSage</h1>
                     </div>
@@ -125,8 +113,8 @@ export default function AppSidebar() {
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
-                    <UserProfileArea />
                 </SidebarMenu>
+                 <UserProfileArea />
             </SidebarFooter>
         </Sidebar>
     );
