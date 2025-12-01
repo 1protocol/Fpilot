@@ -10,7 +10,6 @@ type Strategy = {
   name: string;
   asset: string;
   timeframe: string;
-  pnl: string;
   status: string;
 };
 
@@ -45,7 +44,6 @@ export default function StrategyList({ strategies, isLoading }: StrategyListProp
                 <TableHead>Strategy Name</TableHead>
                 <TableHead>Asset</TableHead>
                 <TableHead>Timeframe</TableHead>
-                <TableHead>7-Day PnL</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -53,13 +51,13 @@ export default function StrategyList({ strategies, isLoading }: StrategyListProp
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ) : strategies.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                     You haven&apos;t created any strategies yet.
                   </TableCell>
                 </TableRow>
@@ -69,9 +67,6 @@ export default function StrategyList({ strategies, isLoading }: StrategyListProp
                     <TableCell className="font-medium">{strategy.name}</TableCell>
                     <TableCell>{strategy.asset}</TableCell>
                     <TableCell>{strategy.timeframe}</TableCell>
-                    <TableCell className={strategy.pnl?.startsWith('+') ? 'text-green-400' : 'text-red-400'}>
-                      {strategy.pnl || 'N/A'}
-                    </TableCell>
                     <TableCell>
                       <Badge variant={getStatusBadgeVariant(strategy.status)}>{strategy.status}</Badge>
                     </TableCell>
@@ -93,5 +88,3 @@ export default function StrategyList({ strategies, isLoading }: StrategyListProp
     </Card>
   )
 }
-
-    

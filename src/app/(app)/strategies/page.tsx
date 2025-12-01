@@ -22,7 +22,7 @@ export default function StrategiesPage() {
   const { data: strategies, isLoading: areStrategiesLoading } = useCollection(strategiesCollectionRef);
 
   const handleStrategyGenerated = (prompt: string, code: string) => {
-    if (!strategiesCollectionRef) {
+    if (!strategiesCollectionRef || !user?.uid) {
         toast({
             variant: "destructive",
             title: "Error saving strategy",
@@ -36,9 +36,8 @@ export default function StrategiesPage() {
       asset: 'Mixed',
       timeframe: 'N/A',
       status: 'Paused',
-      userId: user?.uid,
+      userId: user.uid,
       createdAt: serverTimestamp(),
-      pnl: 'N/A', // Default PnL,
       code: code,
     };
     
@@ -92,5 +91,3 @@ export default function StrategiesPage() {
     </div>
   );
 }
-
-    
