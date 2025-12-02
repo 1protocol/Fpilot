@@ -324,6 +324,32 @@
         "uptime",
         "createdAt"
       ]
+    },
+    "ApiKey": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ApiKey",
+      "type": "object",
+      "description": "Represents a user's API key for an exchange.",
+      "properties": {
+        "userId": {
+            "type": "string",
+            "description": "The ID of the user who owns this API key."
+        },
+        "exchange": {
+            "type": "string",
+            "description": "The name of the exchange (e.g., Binance, Bybit)."
+        },
+        "publicKey": {
+            "type": "string",
+            "description": "The public part of the API key."
+        },
+        "status": {
+            "type": "string",
+            "description": "The status of the API key (e.g., Active, Expired).",
+            "enum": ["Active", "Expired"]
+        }
+      },
+      "required": ["userId", "exchange", "publicKey", "status"]
     }
   },
   "auth": {
@@ -478,6 +504,26 @@
             {
               "name": "aiBotId",
               "description": "The bot's unique ID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/api_keys/{apiKeyId}",
+        "definition": {
+          "entityName": "ApiKey",
+          "schema": {
+            "$ref": "#/backend/entities/ApiKey"
+          },
+          "description": "Stores a user's exchange API keys. Access is restricted to the user themselves.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The user's unique ID."
+            },
+            {
+              "name": "apiKeyId",
+              "description": "The API key's unique ID."
             }
           ]
         }

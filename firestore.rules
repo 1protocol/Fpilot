@@ -6,7 +6,7 @@
  *
  * Data Structure: The data is organized into top-level collections for globally accessible data (`market_data`,
  * `ai_models`) and a primary `/users/{userId}` collection that acts as a root for all user-specific subcollections
- * (`risk_profiles`, `trade_orders`, `strategies`). This structural segregation simplifies rules by isolating private data trees
+ * (`risk_profiles`, `trade_orders`, `strategies`, `api_keys`). This structural segregation simplifies rules by isolating private data trees
  * from public ones.
  *
  * Key Security Decisions:
@@ -202,6 +202,20 @@ service cloud.firestore {
        * @principle   Enforces strict ownership for live trading components.
        */
       match /ai_bots/{aiBotId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasCorrectUserIdOnCreate(userId);
+        allow update: if isExistingOwner(userId) && isUserIdImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description A user's private API keys for exchanges. Only the user can manage their own keys.
+       * @path        /users/{userId}/api_keys/{apiKeyId}
+       * @allow       The authenticated user can manage their own API keys.
+       * @deny        User 'A' tries to access API keys belonging to user 'B'.
+       * @principle   Enforces strict ownership for sensitive credentials.
+       */
+      match /api_keys/{apiKeyId} {
         allow get, list: if isOwner(userId);
         allow create: if isOwner(userId) && hasCorrectUserIdOnCreate(userId);
         allow update: if isExistingOwner(userId) && isUserIdImmutable();

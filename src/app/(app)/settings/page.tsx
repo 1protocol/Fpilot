@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useFirebase, setDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase";
+import { useFirebase, setDocumentNonBlocking, useDoc, useMemoFirebase, useCollection, deleteDocumentNonBlocking } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { updateProfile } from "firebase/auth";
-import { doc } from "firebase/firestore";
+import { doc, collection } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useForm } from "react-hook-form";
@@ -23,13 +23,17 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
-const apiKeys = [
-    { id: "1", exchange: "Binance", key: "abc...xyz", status: "Active" },
-    { id: "2", exchange: "Bybit", key: "def...uvw", status: "Active" },
-    { id: "3", exchange: "Coinbase", key: "ghi...rst", status: "Expired" },
-];
+export type ApiKey = {
+    id: string;
+    exchange: string;
+    publicKey: string;
+    status: 'Active' | 'Expired';
+    userId: string;
+}
 
 const profileSchema = z.object({
   displayName: z.string().min(3, { message: "Name must be at least 3 characters." }),
@@ -45,23 +49,30 @@ export default function SettingsPage() {
     const { user, auth, firestore, isUserLoading } = useFirebase();
     const { toast } = useToast();
     
+    // Risk Profile Data
     const riskProfileDocRef = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return doc(firestore, 'users', user.uid, 'risk_profiles', 'default');
     }, [user, firestore]);
-
     const { data: riskProfileData, isLoading: isRiskProfileLoading } = useDoc(riskProfileDocRef);
+
+    // API Keys Data
+    const apiKeysCollectionRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'users', user.uid, 'api_keys');
+    }, [user, firestore]);
+    const { data: apiKeys, isLoading: areApiKeysLoading } = useCollection<ApiKey>(apiKeysCollectionRef);
+
 
     const profileForm = useForm<z.infer<typeof profileSchema>>({
         resolver: zodResolver(profileSchema),
-        values: { // Use values to make the form reactive to user changes
+        values: { 
             displayName: user?.displayName || '',
         },
     });
 
     const riskForm = useForm<z.infer<typeof riskProfileSchema>>({
         resolver: zodResolver(riskProfileSchema),
-        // Use values to make the form reactive to data loading from Firestore
         values: {
             valueAtRisk: riskProfileData?.valueAtRisk ?? 5,
             expectedShortfall: riskProfileData?.expectedShortfall ?? 10,
@@ -111,6 +122,14 @@ export default function SettingsPage() {
         setDocumentNonBlocking(riskProfileDocRef, dataToSave, { merge: true });
         toast({ title: "Risk Profile Updated" });
     };
+
+    const handleDeleteApiKey = (keyId: string) => {
+        if (!user || !firestore) return;
+        const keyDocRef = doc(firestore, 'users', user.uid, 'api_keys', keyId);
+        deleteDocumentNonBlocking(keyDocRef);
+        toast({ title: "API Key Deleted" });
+    };
+
 
     const getStatusBadgeVariant = (status: string) => {
         return status === "Active" ? "default" : "destructive";
@@ -284,12 +303,27 @@ export default function SettingsPage() {
                         <AccordionContent>
                              <CardHeader className="flex-row items-center justify-between pt-0 px-6 pb-6">
                                 <div/>
-                                <Button>
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Add New Key
-                                </Button>
+                                 <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Key</Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Add New API Key</DialogTitle>
+                                            <DialogDescription>
+                                                Securely add a new API key from a supported exchange. The secret key is never stored.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        {/* TODO: Add form for new API key */}
+                                        <p className="text-center text-muted-foreground py-8">Form will be here in the next step.</p>
+                                    </DialogContent>
+                                </Dialog>
                             </CardHeader>
                             <CardContent>
+                                 {areApiKeysLoading ? (
+                                    <div className="text-center p-8 text-muted-foreground"> <Loader2 className="h-6 w-6 animate-spin mx-auto"/> </div>
+                                ) : apiKeys && apiKeys.length > 0 ? (
+                                <>
                                 <div className="rounded-md border hidden md:block">
                                     <Table>
                                         <TableHeader>
@@ -304,14 +338,28 @@ export default function SettingsPage() {
                                             {apiKeys.map((key) => (
                                                 <TableRow key={key.id}>
                                                     <TableCell className="font-medium">{key.exchange}</TableCell>
-                                                    <TableCell className="font-mono">{key.key}</TableCell>
+                                                    <TableCell className="font-mono">{key.publicKey.substring(0, 4)}...{key.publicKey.slice(-4)}</TableCell>
                                                     <TableCell>
                                                         <Badge variant={getStatusBadgeVariant(key.status)} className={cn(key.status === 'Active' && 'bg-green-600/80')}>{key.status}</Badge>
                                                     </TableCell>
                                                     <TableCell className="text-right">
-                                                        <Button variant="ghost" size="icon">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                         <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>This will permanently delete the API key for {key.exchange}. This action cannot be undone.</AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDeleteApiKey(key.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
@@ -328,15 +376,36 @@ export default function SettingsPage() {
                                             <div className="flex items-center justify-between">
                                                 <div>
                                                     <p className="text-xs text-muted-foreground">Public Key</p>
-                                                    <p className="font-mono text-sm">{key.key}</p>
+                                                    <p className="font-mono text-sm">{key.publicKey.substring(0, 4)}...{key.publicKey.slice(-4)}</p>
                                                 </div>
-                                                <Button variant="ghost" size="icon">
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
+                                                 <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>This will permanently delete the API key for {key.exchange}. This action cannot be undone.</AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDeleteApiKey(key.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             </div>
                                         </Card>
                                     ))}
                                 </div>
+                                </>
+                                ) : (
+                                    <div className="text-center py-12 text-muted-foreground">
+                                        <p>No API keys added yet.</p>
+                                        <p className="text-sm">Click "Add New Key" to connect an exchange.</p>
+                                    </div>
+                                )}
                             </CardContent>
                         </AccordionContent>
                     </Card>
