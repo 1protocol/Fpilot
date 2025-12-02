@@ -2,43 +2,86 @@
 
 import { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Banknote, CandlestickChart, Link as LinkIcon, Newspaper, Twitter } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Banknote, CandlestickChart, Link as LinkIcon, Newspaper, Rss, Twitter } from "lucide-react";
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
-const initialDataSources = [
+type SubSource = {
+    name: string;
+    status: 'Operational' | 'Degraded' | 'Error';
+};
+
+type DataSource = {
+    title: string;
+    description: string;
+    icon: React.ElementType;
+    subSources: SubSource[];
+};
+
+const initialDataSources: DataSource[] = [
     {
         title: "Real-time Market Data",
-        description: "Live feeds from Binance, Bybit, Coinbase, and Deribit across all timeframes.",
+        description: "Live feeds from major exchanges across all supported timeframes.",
         icon: CandlestickChart,
-        status: "Connected"
+        subSources: [
+            { name: "Binance", status: "Operational" },
+            { name: "Bybit", status: "Operational" },
+            { name: "Coinbase", status: "Operational" },
+            { name: "Deribit", status: "Operational" },
+        ]
     },
     {
         title: "On-Chain Metrics",
-        description: "Data from Glassnode, CryptoQuant, and Messari for deep blockchain analysis.",
+        description: "Deep blockchain analysis from leading on-chain intelligence providers.",
         icon: LinkIcon,
-        status: "Connected"
+        subSources: [
+            { name: "Glassnode API", status: "Operational" },
+            { name: "CryptoQuant API", status: "Operational" },
+            { name: "Messari API", status: "Degraded" },
+        ]
     },
     {
         title: "Social Media Sentiment",
-        description: "Real-time sentiment analysis from Twitter, Reddit, and Telegram.",
+        description: "Real-time sentiment analysis from key social platforms.",
         icon: Twitter,
-        status: "Connected"
+        subSources: [
+            { name: "X (Twitter) Firehose", status: "Operational" },
+            { name: "Reddit Stream", status: "Operational" },
+            { name: "Telegram Channels", status: "Error" },
+        ]
     },
     {
         title: "News Feeds",
-        description: "Automated news ingestion from CoinTelegraph, Decrypt, and TheBlock.",
+        description: "Automated news ingestion from top-tier crypto publications.",
         icon: Newspaper,
-        status: "Connected"
+        subSources: [
+            { name: "CoinTelegraph", status: "Operational" },
+            { name: "Decrypt", status: "Operational" },
+            { name: "TheBlock", status: "Operational" },
+        ]
     },
     {
         title: "Macroeconomic Data",
-        description: "Key economic indicators including Fed announcements, inflation data, and VIX.",
+        description: "Key economic indicators that influence market movements.",
         icon: Banknote,
-        status: "Degraded"
+        subSources: [
+            { name: "Federal Reserve (FRED)", status: "Operational" },
+            { name: "VIX Central", status: "Operational" },
+        ]
+    },
+    {
+        title: "Custom RSS Feeds",
+        description: "User-defined RSS feeds for niche news and blog analysis.",
+        icon: Rss,
+        subSources: [
+            { name: "User Feed 1", status: "Operational" },
+            { name: "User Feed 2", status: "Operational" },
+        ]
     }
 ];
 
-const statuses = ["Connected", "Degraded", "Error"];
+const statuses: SubSource['status'][] = ["Operational", "Degraded", "Error"];
 
 export default function DataCollectionPage() {
     const [dataSources, setDataSources] = useState(initialDataSources);
@@ -46,15 +89,18 @@ export default function DataCollectionPage() {
     useEffect(() => {
         const interval = setInterval(() => {
             setDataSources(currentSources =>
-                currentSources.map(source => {
-                    // Give a higher chance to stay "Connected"
-                    if (Math.random() > 0.1) {
-                         // ~30% chance to change status
-                        const newStatus = Math.random() < 0.3 ? statuses[Math.floor(Math.random() * statuses.length)] : source.status;
-                        return { ...source, status: newStatus };
-                    }
-                    return { ...source, status: "Connected" };
-                })
+                currentSources.map(source => ({
+                    ...source,
+                    subSources: source.subSources.map(sub => {
+                        // Give a higher chance to stay "Operational"
+                        if (Math.random() > 0.15) {
+                            return { ...sub, status: "Operational" };
+                        }
+                        // Otherwise, pick a random new status
+                        const newStatus = statuses[Math.floor(Math.random() * statuses.length)];
+                        return { ...sub, status: newStatus };
+                    })
+                }))
             );
         }, 5000); // Update every 5 seconds
 
@@ -63,7 +109,7 @@ export default function DataCollectionPage() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-          case "Connected":
+          case "Operational":
             return "bg-green-500";
           case "Degraded":
             return "bg-yellow-500";
@@ -75,23 +121,31 @@ export default function DataCollectionPage() {
     return (
         <div className="space-y-8">
             <PageHeader
-                title="Data Collection"
-                description="Manage and monitor all integrated data sources."
+                title="Data Collection Engine"
+                description="Manage and monitor all integrated data sources in real-time."
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
                 {dataSources.map((source) => (
                     <Card key={source.title}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                             <div className="flex items-center gap-4">
-                                <source.icon className="h-6 w-6 text-muted-foreground" />
+                        <CardHeader>
+                            <div className="flex items-center gap-4">
+                                <source.icon className="h-7 w-7 text-muted-foreground" />
                                 <CardTitle className="text-lg font-headline">{source.title}</CardTitle>
                             </div>
-                             <div className="flex items-center gap-2">
-                                <span className={`h-2 w-2 rounded-full ${getStatusColor(source.status)}`}></span>
-                                <span className="text-xs font-medium text-muted-foreground">{source.status}</span>
-                            </div>
+                            <CardDescription className="pt-1">{source.description}</CardDescription>
                         </CardHeader>
-                        <CardDescription className="px-6 pb-6 pt-2">{source.description}</CardDescription>
+                        <CardContent className="space-y-3">
+                            <p className="text-sm font-medium text-muted-foreground">Monitored Sources</p>
+                            {source.subSources.map(sub => (
+                                <div key={sub.name} className="flex items-center justify-between text-sm">
+                                    <span>{sub.name}</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className={cn("h-2 w-2 rounded-full", getStatusColor(sub.status))}></div>
+                                        <span className="font-mono text-xs">{sub.status}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </CardContent>
                     </Card>
                 ))}
             </div>
