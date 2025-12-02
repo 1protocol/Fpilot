@@ -61,6 +61,28 @@ const aiConfigSchema = z.object({
     path: ["apiKey"],
 });
 
+const providerModels = {
+    google: [
+        { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (Fast & Efficient)" },
+        { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro (Balanced)" },
+        { value: "gemini-2.5-ultra", label: "Gemini 2.5 Ultra (Most Powerful)", disabled: true },
+    ],
+    openai: [
+        { value: "gpt-4o", label: "GPT-4o (Latest)" },
+        { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
+        { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
+    ],
+    anthropic: [
+        { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
+        { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" },
+        { value: "claude-3-haiku-20240307", label: "Claude 3 Haiku" },
+    ],
+    deepseek: [
+        { value: "deepseek-chat", label: "DeepSeek-V2 Chat" },
+        { value: "deepseek-coder", label: "DeepSeek-V2 Coder" },
+    ]
+}
+
 export default function SettingsPage() {
     const { user, auth, firestore, isUserLoading } = useFirebase();
     const { toast } = useToast();
@@ -148,6 +170,25 @@ export default function SettingsPage() {
     }, [aiConfigData, aiConfigForm]);
 
     const watchedAiProvider = aiConfigForm.watch("provider");
+
+    // Reset model when provider changes
+    useEffect(() => {
+        const defaultModels: Record<string, string> = {
+            google: 'gemini-2.5-flash',
+            openai: 'gpt-4o',
+            anthropic: 'claude-3-sonnet-20240229',
+            deepseek: 'deepseek-chat',
+        };
+        const newProvider = aiConfigForm.getValues('provider');
+        // Only reset if the current model is not valid for the new provider
+        const currentModelIsValid = providerModels[newProvider]?.some(m => m.value === aiConfigForm.getValues('model'));
+        
+        if (!currentModelIsValid) {
+            aiConfigForm.setValue('model', defaultModels[newProvider]);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [watchedAiProvider]);
+
 
     const onProfileSave = async (values: z.infer<typeof profileSchema>) => {
         if (!user || !auth || !firestore) return;
@@ -600,63 +641,48 @@ export default function SettingsPage() {
                                                         </FormItem>
                                                     )}
                                                 />
-
-                                                {watchedAiProvider === "google" ? (
-                                                    <FormField
-                                                        control={aiConfigForm.control}
-                                                        name="model"
-                                                        render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Language Model</FormLabel>
-                                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                                <FormControl>
-                                                                    <SelectTrigger>
-                                                                        <SelectValue placeholder="Select model" />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent>
-                                                                    <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (Fast & Efficient)</SelectItem>
-                                                                    <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro (Balanced)</SelectItem>
-                                                                    <SelectItem value="gemini-2.5-ultra" disabled>Gemini 2.5 Ultra (Most Powerful)</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
+                                                <FormField
+                                                    control={aiConfigForm.control}
+                                                    name="model"
+                                                    render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Language Model</FormLabel>
+                                                        <Select onValueChange={field.onChange} value={field.value}>
+                                                            <FormControl>
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="Select a model" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                {(providerModels[watchedAiProvider] || []).map((model) => (
+                                                                    <SelectItem key={model.value} value={model.value} disabled={model.disabled}>
+                                                                        {model.label}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
                                                 />
-                                                ) : (
-                                                    <>
-                                                        <Controller
-                                                            control={aiConfigForm.control}
-                                                            name="apiKey"
-                                                            render={({ field, fieldState }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>API Key</FormLabel>
-                                                                    <FormControl>
-                                                                        {field.value ? (
-                                                                            <MaskedApiKey apiKey={field.value} />
-                                                                        ) : (
-                                                                            <Input type="password" placeholder="Your API Key" {...field} />
-                                                                        )}
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                        <FormField
-                                                            control={aiConfigForm.control}
-                                                            name="model"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Model Name</FormLabel>
-                                                                    <FormControl>
-                                                                        <Input placeholder="e.g., gpt-4o, claude-3-opus-20240229" {...field} />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </>
+                                                {watchedAiProvider !== "google" && (
+                                                    <Controller
+                                                        control={aiConfigForm.control}
+                                                        name="apiKey"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>API Key</FormLabel>
+                                                                <FormControl>
+                                                                    {field.value ? (
+                                                                        <MaskedApiKey apiKey={field.value} />
+                                                                    ) : (
+                                                                        <Input type="password" placeholder="Your API Key" {...field} />
+                                                                    )}
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
                                                 )}
                                             </>
                                         )}
