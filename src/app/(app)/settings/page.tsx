@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, PlusCircle, Trash2 } from "lucide-react";
+import { Bot, Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useFirebase, setDocumentNonBlocking, useDoc, useMemoFirebase, useCollection, deleteDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 
 export type ApiKey = {
@@ -51,6 +52,18 @@ const apiKeySchema = z.object({
     secretKey: z.string().min(10, "Secret key is too short."),
 })
 
+const aiConfigSchema = z.object({
+    provider: z.enum(["google", "openai", "anthropic", "deepseek"]),
+    model: z.string().min(1, "Model name is required."),
+    apiKey: z.string().optional(),
+}).refine(data => {
+    // API key is required for providers other than Google
+    return data.provider === 'google' || (data.apiKey && data.apiKey.length > 0);
+}, {
+    message: "API Key is required for this provider.",
+    path: ["apiKey"],
+});
+
 export default function SettingsPage() {
     const { user, auth, firestore, isUserLoading } = useFirebase();
     const { toast } = useToast();
@@ -69,6 +82,13 @@ export default function SettingsPage() {
         return collection(firestore, 'users', user.uid, 'api_keys');
     }, [user, firestore]);
     const { data: apiKeys, isLoading: areApiKeysLoading } = useCollection<ApiKey>(apiKeysCollectionRef);
+
+    // AI Config Data
+    const aiConfigDocRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return doc(firestore, 'users', user.uid, 'config', 'ai');
+    }, [user, firestore]);
+    const { data: aiConfigData, isLoading: isAiConfigLoading } = useDoc(aiConfigDocRef);
 
 
     const profileForm = useForm<z.infer<typeof profileSchema>>({
@@ -96,6 +116,15 @@ export default function SettingsPage() {
         },
     });
 
+     const aiConfigForm = useForm<z.infer<typeof aiConfigSchema>>({
+        resolver: zodResolver(aiConfigSchema),
+        defaultValues: {
+            provider: "google",
+            model: "gemini-2.5-flash",
+            apiKey: "",
+        },
+    });
+
     // Reset forms when user or data loads
     useEffect(() => {
         if (user) {
@@ -112,6 +141,14 @@ export default function SettingsPage() {
             });
         }
     }, [riskProfileData, riskForm]);
+
+    useEffect(() => {
+        if (aiConfigData) {
+            aiConfigForm.reset(aiConfigData);
+        }
+    }, [aiConfigData, aiConfigForm]);
+
+    const watchedAiProvider = aiConfigForm.watch("provider");
 
 
     const onProfileSave = async (values: z.infer<typeof profileSchema>) => {
@@ -138,6 +175,13 @@ export default function SettingsPage() {
         setDocumentNonBlocking(riskProfileDocRef, dataToSave, { merge: true });
         toast({ title: "Risk Profile Updated" });
     };
+    
+    const onAiConfigSave = async (values: z.infer<typeof aiConfigSchema>) => {
+        if (!aiConfigDocRef) return;
+        aiConfigForm.formState.isSubmitting;
+        setDocumentNonBlocking(aiConfigDocRef, values, { merge: true });
+        toast({ title: "AI Configuration Saved" });
+    }
 
     const onApiKeySave = async (values: z.infer<typeof apiKeySchema>) => {
         if (!apiKeysCollectionRef || !user) return;
@@ -344,7 +388,7 @@ export default function SettingsPage() {
                                         <DialogHeader>
                                             <DialogTitle>Add New API Key</DialogTitle>
                                             <DialogDescription>
-                                                Securely add a new API key from a supported exchange. The secret key is never stored.
+                                                Securely add a new API key from a supported exchange. The secret key is only used to establish a connection and is never stored.
                                             </DialogDescription>
                                         </DialogHeader>
                                         <Form {...apiKeyForm}>
@@ -394,7 +438,7 @@ export default function SettingsPage() {
                                                     )}
                                                 />
                                                 <DialogFooter>
-                                                    <Button variant="ghost" onClick={() => setAddKeyOpen(false)}>Cancel</Button>
+                                                    <Button variant="ghost" type="button" onClick={() => setAddKeyOpen(false)}>Cancel</Button>
                                                     <Button type="submit" disabled={apiKeyForm.formState.isSubmitting}>
                                                         {apiKeyForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                                         Add Key
@@ -506,21 +550,133 @@ export default function SettingsPage() {
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                            <CardContent className="space-y-6">
-                                <div className="space-y-2">
-                                    <Label>Language Model</Label>
-                                    <Select defaultValue="gemini-2.5-flash">
-                                        <SelectTrigger className="w-full md:w-[280px]">
-                                            <SelectValue placeholder="Select model" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (Fast & Efficient)</SelectItem>
-                                            <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro (Balanced)</SelectItem>
-                                            <SelectItem value="gemini-2.5-ultra" disabled>Gemini 2.5 Ultra (Most Powerful - Coming Soon)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </CardContent>
+                            <Form {...aiConfigForm}>
+                                <form onSubmit={aiConfigForm.handleSubmit(onAiConfigSave)}>
+                                    <CardContent className="space-y-6">
+                                        {isAiConfigLoading ? (
+                                            <div className="space-y-4">
+                                                <Skeleton className="h-20 w-full" />
+                                                <Skeleton className="h-10 w-full" />
+                                            </div>
+                                        ) : (
+                                            <FormField
+                                                control={aiConfigForm.control}
+                                                name="provider"
+                                                render={({ field }) => (
+                                                <FormItem className="space-y-3">
+                                                    <FormLabel>AI Provider</FormLabel>
+                                                    <FormControl>
+                                                        <RadioGroup
+                                                            onValueChange={field.onChange}
+                                                            defaultValue={field.value}
+                                                            className="grid grid-cols-2 gap-4"
+                                                        >
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <RadioGroupItem value="google" id="google" className="sr-only" />
+                                                                </FormControl>
+                                                                <Label htmlFor="google" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                                                    <Bot className="mb-3 h-6 w-6" />
+                                                                    Google Gemini
+                                                                </Label>
+                                                            </FormItem>
+                                                             <FormItem>
+                                                                <FormControl>
+                                                                    <RadioGroupItem value="openai" id="openai" className="sr-only" />
+                                                                </FormControl>
+                                                                <Label htmlFor="openai" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                                                    <Bot className="mb-3 h-6 w-6" />
+                                                                    OpenAI
+                                                                </Label>
+                                                            </FormItem>
+                                                             <FormItem>
+                                                                <FormControl>
+                                                                    <RadioGroupItem value="anthropic" id="anthropic" className="sr-only" />
+                                                                </FormControl>
+                                                                <Label htmlFor="anthropic" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                                                    <Bot className="mb-3 h-6 w-6" />
+                                                                    Anthropic Claude
+                                                                </Label>
+                                                            </FormItem>
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <RadioGroupItem value="deepseek" id="deepseek" className="sr-only" />
+                                                                </FormControl>
+                                                                <Label htmlFor="deepseek" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                                                    <Bot className="mb-3 h-6 w-6" />
+                                                                    DeepSeek
+                                                                </Label>
+                                                            </FormItem>
+                                                        </RadioGroup>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                          />
+                                        )}
+
+                                        {watchedAiProvider === "google" ? (
+                                            <FormField
+                                                control={aiConfigForm.control}
+                                                name="model"
+                                                render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Language Model</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Select model" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (Fast & Efficient)</SelectItem>
+                                                            <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro (Balanced)</SelectItem>
+                                                            <SelectItem value="gemini-2.5-ultra" disabled>Gemini 2.5 Ultra (Most Powerful)</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                          />
+                                        ) : (
+                                            <>
+                                                <FormField
+                                                    control={aiConfigForm.control}
+                                                    name="apiKey"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>API Key</FormLabel>
+                                                            <FormControl>
+                                                                <Input type="password" placeholder="Your API Key" {...field} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={aiConfigForm.control}
+                                                    name="model"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Model Name</FormLabel>
+                                                            <FormControl>
+                                                                <Input placeholder="e.g., gpt-4o, claude-3-opus-20240229" {...field} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </>
+                                        )}
+                                    </CardContent>
+                                     <CardFooter>
+                                        <Button type="submit" disabled={aiConfigForm.formState.isSubmitting || isAiConfigLoading}>
+                                            {aiConfigForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Save AI Configuration
+                                        </Button>
+                                    </CardFooter>
+                                </form>
+                            </Form>
                         </AccordionContent>
                     </Card>
                 </AccordionItem>
