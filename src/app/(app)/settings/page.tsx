@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useFirebase, setDocumentNonBlocking, useDoc, useMemoFirebase, useCollection, deleteDocumentNonBlocking } from "@/firebase";
+import { useFirebase, setDocumentNonBlocking, useDoc, useMemoFirebase, useCollection, deleteDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { updateProfile } from "firebase/auth";
-import { doc, collection } from "firebase/firestore";
+import { doc, collection, serverTimestamp } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useForm } from "react-hook-form";
@@ -45,9 +45,16 @@ const riskProfileSchema = z.object({
   maxPositionSize: z.number().min(0).max(100),
 });
 
+const apiKeySchema = z.object({
+    exchange: z.string().min(1, "Please select an exchange."),
+    publicKey: z.string().min(10, "Public key is too short."),
+    secretKey: z.string().min(10, "Secret key is too short."),
+})
+
 export default function SettingsPage() {
     const { user, auth, firestore, isUserLoading } = useFirebase();
     const { toast } = useToast();
+    const [isAddKeyOpen, setAddKeyOpen] = useState(false);
     
     // Risk Profile Data
     const riskProfileDocRef = useMemoFirebase(() => {
@@ -77,6 +84,15 @@ export default function SettingsPage() {
             valueAtRisk: riskProfileData?.valueAtRisk ?? 5,
             expectedShortfall: riskProfileData?.expectedShortfall ?? 10,
             maxPositionSize: riskProfileData?.maxPositionSize ?? 25,
+        },
+    });
+
+    const apiKeyForm = useForm<z.infer<typeof apiKeySchema>>({
+        resolver: zodResolver(apiKeySchema),
+        defaultValues: {
+            exchange: "",
+            publicKey: "",
+            secretKey: "",
         },
     });
 
@@ -122,6 +138,23 @@ export default function SettingsPage() {
         setDocumentNonBlocking(riskProfileDocRef, dataToSave, { merge: true });
         toast({ title: "Risk Profile Updated" });
     };
+
+    const onApiKeySave = async (values: z.infer<typeof apiKeySchema>) => {
+        if (!apiKeysCollectionRef || !user) return;
+        
+        const newKeyData = {
+            userId: user.uid,
+            exchange: values.exchange,
+            publicKey: values.publicKey,
+            status: "Active" as const,
+            createdAt: serverTimestamp(),
+        };
+
+        await addDocumentNonBlocking(apiKeysCollectionRef, newKeyData);
+        toast({ title: "API Key Added", description: `Your ${values.exchange} key has been securely added.` });
+        apiKeyForm.reset();
+        setAddKeyOpen(false);
+    }
 
     const handleDeleteApiKey = (keyId: string) => {
         if (!user || !firestore) return;
@@ -303,7 +336,7 @@ export default function SettingsPage() {
                         <AccordionContent>
                              <CardHeader className="flex-row items-center justify-between pt-0 px-6 pb-6">
                                 <div/>
-                                 <Dialog>
+                                <Dialog open={isAddKeyOpen} onOpenChange={setAddKeyOpen}>
                                     <DialogTrigger asChild>
                                         <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Key</Button>
                                     </DialogTrigger>
@@ -314,8 +347,61 @@ export default function SettingsPage() {
                                                 Securely add a new API key from a supported exchange. The secret key is never stored.
                                             </DialogDescription>
                                         </DialogHeader>
-                                        {/* TODO: Add form for new API key */}
-                                        <p className="text-center text-muted-foreground py-8">Form will be here in the next step.</p>
+                                        <Form {...apiKeyForm}>
+                                            <form onSubmit={apiKeyForm.handleSubmit(onApiKeySave)} className="space-y-4">
+                                                 <FormField
+                                                    control={apiKeyForm.control}
+                                                    name="exchange"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                        <FormLabel>Exchange</FormLabel>
+                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                            <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Select an exchange" />
+                                                            </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="Binance">Binance</SelectItem>
+                                                                <SelectItem value="Bybit">Bybit</SelectItem>
+                                                                <SelectItem value="Coinbase">Coinbase</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                    />
+                                                <FormField
+                                                    control={apiKeyForm.control}
+                                                    name="publicKey"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>API Public Key</FormLabel>
+                                                            <FormControl><Input placeholder="Your public key" {...field} /></FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                 <FormField
+                                                    control={apiKeyForm.control}
+                                                    name="secretKey"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>API Secret Key</FormLabel>
+                                                            <FormControl><Input type="password" placeholder="Your secret key" {...field} /></FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <DialogFooter>
+                                                    <Button variant="ghost" onClick={() => setAddKeyOpen(false)}>Cancel</Button>
+                                                    <Button type="submit" disabled={apiKeyForm.formState.isSubmitting}>
+                                                        {apiKeyForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                        Add Key
+                                                    </Button>
+                                                </DialogFooter>
+                                            </form>
+                                        </Form>
                                     </DialogContent>
                                 </Dialog>
                             </CardHeader>
@@ -411,6 +497,34 @@ export default function SettingsPage() {
                     </Card>
                 </AccordionItem>
 
+                 <AccordionItem value="ai-management">
+                     <Card>
+                        <AccordionTrigger className="p-6 hover:no-underline">
+                             <div className="text-left">
+                                <CardTitle>AI Management</CardTitle>
+                                <CardDescription className="mt-1.5">Configure the AI models used by the platform.</CardDescription>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            <CardContent className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label>Language Model</Label>
+                                    <Select defaultValue="gemini-2.5-flash">
+                                        <SelectTrigger className="w-full md:w-[280px]">
+                                            <SelectValue placeholder="Select model" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (Fast & Efficient)</SelectItem>
+                                            <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro (Balanced)</SelectItem>
+                                            <SelectItem value="gemini-2.5-ultra" disabled>Gemini 2.5 Ultra (Most Powerful - Coming Soon)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </CardContent>
+                        </AccordionContent>
+                    </Card>
+                </AccordionItem>
+
                  <AccordionItem value="notifications">
                      <Card>
                         <AccordionTrigger className="p-6 hover:no-underline">
@@ -499,3 +613,4 @@ export default function SettingsPage() {
             </Accordion>
         </div>
     );
+}
