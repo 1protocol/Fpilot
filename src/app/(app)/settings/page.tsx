@@ -375,6 +375,40 @@ export default function SettingsPage() {
                     </Card>
                 </AccordionItem>
 
+                <AccordionItem value="language">
+                    <Card>
+                        <AccordionTrigger className="p-6 hover:no-underline">
+                             <div className="text-left">
+                                <CardTitle>Language &amp; Region</CardTitle>
+                                <CardDescription className="mt-1.5">Choose the language and region for your account.</CardDescription>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Language</Label>
+                                    <Select defaultValue="en">
+                                        <SelectTrigger className="w-full md:w-[280px]">
+                                            <SelectValue placeholder="Select language" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="en">
+                                                <span className="flex items-center gap-2">🇬🇧 English</span>
+                                            </SelectItem>
+                                            <SelectItem value="tr">
+                                                <span className="flex items-center gap-2">🇹🇷 Türkçe</span>
+                                            </SelectItem>
+                                            <SelectItem value="es" disabled>
+                                                <span className="flex items-center gap-2">🇪🇸 Español (coming soon)</span>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </CardContent>
+                        </AccordionContent>
+                    </Card>
+                </AccordionItem>
+
                 <AccordionItem value="appearance">
                     <Card>
                         <AccordionTrigger className="p-6 hover:no-underline">
@@ -396,4 +430,3 @@ export default function SettingsPage() {
             </Accordion>
         </div>
     );
-}
