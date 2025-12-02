@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Play, Pause, Trash2, Bot, PlusCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, addDoc } from 'firebase/firestore';
 import type { Strategy } from '@/components/strategies/strategy-list';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { generateTradingSignal } from '@/services/analyticsService';
 
 export type AIBot = {
     id: string;
@@ -47,6 +48,10 @@ export default function AiBotsPage() {
     , [user, firestore]);
     const { data: strategies, isLoading: areStrategiesLoading } = useCollection<Strategy>(strategiesCollectionRef);
 
+    const tradeOrdersCollectionRef = useMemoFirebase(() =>
+        (user && firestore) ? collection(firestore, 'users', user.uid, 'trade_orders') : null
+    , [user, firestore]);
+
     // --- State Management for Bot Creation ---
     const [newBotName, setNewBotName] = useState('');
     const [selectedStrategyId, setSelectedStrategyId] = useState('');
@@ -61,28 +66,56 @@ export default function AiBotsPage() {
     }, [bots]);
 
 
-    // Simulate live P&L updates for active bots
+    // Simulate live P&L updates and trading signals for active bots
     useEffect(() => {
         const interval = setInterval(() => {
-            setLocalBots((currentBots) =>
-                currentBots.map((bot) => {
-                    if (bot.status === 'Active') {
-                        const pnlChange = (Math.random() - 0.45) * 10;
-                        const newPnl = bot.pnl + pnlChange;
-                        // Also update in Firestore non-blockingly
-                        if (firestore && user) {
-                            const botDocRef = doc(firestore, 'users', user.uid, 'ai_bots', bot.id);
-                            setDocumentNonBlocking(botDocRef, { pnl: newPnl }, { merge: true });
+            localBots.forEach(async (bot) => {
+                if (bot.status === 'Active' && user && firestore && tradeOrdersCollectionRef) {
+                    // 1. Simulate P&L change
+                    const pnlChange = (Math.random() - 0.45) * 10;
+                    const newPnl = bot.pnl + pnlChange;
+                    const botDocRef = doc(firestore, 'users', user.uid, 'ai_bots', bot.id);
+                    setDocumentNonBlocking(botDocRef, { pnl: newPnl }, { merge: true });
+                     setLocalBots((currentBots) => currentBots.map(b => b.id === bot.id ? { ...b, pnl: newPnl } : b));
+
+                    // 2. ~20% chance to generate a trading signal every interval
+                    if (Math.random() < 0.2) {
+                        try {
+                            const signal = await generateTradingSignal({
+                                cryptocurrency: bot.asset.split('/')[0], // e.g., 'BTC' from 'BTC/USDT'
+                                riskLevel: 'Medium', // Placeholder
+                                strategyType: 'Momentum', // Placeholder
+                            });
+                            
+                            if (signal.signal !== 'Hold') {
+                                // 3. Create a trade order in Firestore if signal is Buy or Sell
+                                const newOrder = {
+                                    userId: user.uid,
+                                    symbol: bot.asset,
+                                    orderType: 'Market',
+                                    side: signal.signal,
+                                    quantity: (Math.random() * 0.5 + 0.01).toFixed(3), // Random quantity
+                                    price: signal.targetPrice,
+                                    status: 'Working',
+                                    timestamp: serverTimestamp(),
+                                };
+                                addDocumentNonBlocking(tradeOrdersCollectionRef, newOrder);
+                                toast({
+                                    title: `🤖 ${bot.name} Generated Signal!`,
+                                    description: `${signal.signal} ${newOrder.quantity} ${bot.asset} @ $${signal.targetPrice.toFixed(2)}`,
+                                });
+                            }
+                        } catch (e) {
+                            console.error(`Bot ${bot.name} failed to generate a signal:`, e);
                         }
-                        return { ...bot, pnl: newPnl };
                     }
-                    return bot;
-                })
-            );
-        }, 3000);
+                }
+            });
+        }, 8000); // Run this logic every 8 seconds for active bots
 
         return () => clearInterval(interval);
-    }, [firestore, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [localBots, firestore, user, tradeOrdersCollectionRef]);
 
     // --- Handlers ---
     const handleCreateBot = async () => {
