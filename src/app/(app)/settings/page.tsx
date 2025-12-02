@@ -4,8 +4,6 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -13,21 +11,28 @@ import { useFirebase, setDocumentNonBlocking, useDoc, useMemoFirebase } from "@/
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { updateProfile } from "firebase/auth";
-import { doc, collection, query } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
 import { Slider } from "@/components/ui/slider";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 const apiKeys = [
     { id: "1", exchange: "Binance", key: "abc...xyz", status: "Active" },
     { id: "2", exchange: "Bybit", key: "def...uvw", status: "Active" },
     { id: "3", exchange: "Coinbase", key: "ghi...rst", status: "Expired" },
 ];
+
+const profileSchema = z.object({
+  displayName: z.string().min(3, { message: "Name must be at least 3 characters." }),
+});
 
 const riskProfileSchema = z.object({
   valueAtRisk: z.number().min(0).max(100),
@@ -38,9 +43,6 @@ const riskProfileSchema = z.object({
 export default function SettingsPage() {
     const { user, auth, firestore, isUserLoading } = useFirebase();
     const { toast } = useToast();
-    const [isSavingProfile, setIsSavingProfile] = useState(false);
-    const [isSavingRisk, setIsSavingRisk] = useState(false);
-    const [displayName, setDisplayName] = useState('');
     
     const riskProfileDocRef = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -49,20 +51,29 @@ export default function SettingsPage() {
 
     const { data: riskProfileData, isLoading: isRiskProfileLoading } = useDoc(riskProfileDocRef);
 
-    const riskForm = useForm<z.infer<typeof riskProfileSchema>>({
-        resolver: zodResolver(riskProfileSchema),
-        defaultValues: {
-            valueAtRisk: 5,
-            expectedShortfall: 10,
-            maxPositionSize: 25,
+    const profileForm = useForm<z.infer<typeof profileSchema>>({
+        resolver: zodResolver(profileSchema),
+        values: { // Use values to make the form reactive to user changes
+            displayName: user?.displayName || '',
         },
     });
 
+    const riskForm = useForm<z.infer<typeof riskProfileSchema>>({
+        resolver: zodResolver(riskProfileSchema),
+        // Use values to make the form reactive to data loading from Firestore
+        values: {
+            valueAtRisk: riskProfileData?.valueAtRisk ?? 5,
+            expectedShortfall: riskProfileData?.expectedShortfall ?? 10,
+            maxPositionSize: riskProfileData?.maxPositionSize ?? 25,
+        },
+    });
+
+    // Reset forms when user or data loads
     useEffect(() => {
         if (user) {
-            setDisplayName(user.displayName || '');
+            profileForm.reset({ displayName: user.displayName || '' });
         }
-    }, [user]);
+    }, [user, profileForm]);
 
     useEffect(() => {
         if (riskProfileData) {
@@ -75,24 +86,22 @@ export default function SettingsPage() {
     }, [riskProfileData, riskForm]);
 
 
-    const handleProfileSave = async () => {
+    const onProfileSave = async (values: z.infer<typeof profileSchema>) => {
         if (!user || !auth || !firestore) return;
-        setIsSavingProfile(true);
+        profileForm.formState.isSubmitting;
         try {
-            await updateProfile(user, { displayName });
+            await updateProfile(user, { displayName: values.displayName });
             const userDocRef = doc(firestore, "users", user.uid);
-            setDocumentNonBlocking(userDocRef, { username: displayName }, { merge: true });
+            setDocumentNonBlocking(userDocRef, { username: values.displayName }, { merge: true });
             toast({ title: "Profile Updated" });
         } catch (error: any) {
             toast({ variant: "destructive", title: "Error", description: error.message });
-        } finally {
-            setIsSavingProfile(false);
         }
     }
 
     const onRiskProfileSave = async (values: z.infer<typeof riskProfileSchema>) => {
         if (!riskProfileDocRef || !user) return;
-        setIsSavingRisk(true);
+        riskForm.formState.isSubmitting;
         const dataToSave = {
             ...values,
             userId: user.uid,
@@ -100,7 +109,6 @@ export default function SettingsPage() {
         };
         setDocumentNonBlocking(riskProfileDocRef, dataToSave, { merge: true });
         toast({ title: "Risk Profile Updated" });
-        setIsSavingRisk(false);
     };
 
     const getStatusBadgeVariant = (status: string) => {
@@ -123,28 +131,48 @@ export default function SettingsPage() {
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                            <CardContent>
-                                {isUserLoading ? <p>Loading...</p> : user ? (
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="name">Full Name</Label>
-                                            <Input id="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="email">Email</Label>
-                                            <Input id="email" type="email" value={user.email || ''} readOnly disabled />
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <p className="text-muted-foreground">Please log in to manage your profile.</p>
-                                )}
-                            </CardContent>
-                            <CardFooter>
-                                <Button onClick={handleProfileSave} disabled={isSavingProfile || isUserLoading}>
-                                    {isSavingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save Changes
-                                </Button>
-                            </CardFooter>
+                            <Form {...profileForm}>
+                                <form onSubmit={profileForm.handleSubmit(onProfileSave)}>
+                                    <CardContent className="space-y-4">
+                                        {isUserLoading ? (
+                                            <div className="space-y-4">
+                                                <Skeleton className="h-6 w-24" />
+                                                <Skeleton className="h-10 w-full" />
+                                                <Skeleton className="h-6 w-24" />
+                                                <Skeleton className="h-10 w-full" />
+                                            </div>
+                                        ) : user ? (
+                                            <>
+                                                <FormField
+                                                    control={profileForm.control}
+                                                    name="displayName"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Full Name</FormLabel>
+                                                            <FormControl>
+                                                                <Input {...field} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormItem>
+                                                    <FormLabel>Email</FormLabel>
+                                                    <Input type="email" value={user.email || ''} readOnly disabled />
+                                                </FormItem>
+                                            </>
+                                        ) : (
+                                            <p className="text-muted-foreground">Please log in to manage your profile.</p>
+                                        )}
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button type="submit" disabled={profileForm.formState.isSubmitting || isUserLoading}>
+                                            {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Save Changes
+                                        </Button>
+                                    </CardFooter>
+                                </form>
+                            </Form>
                         </AccordionContent>
                     </Card>
                 </AccordionItem>
@@ -161,7 +189,13 @@ export default function SettingsPage() {
                              <Form {...riskForm}>
                                 <form onSubmit={riskForm.handleSubmit(onRiskProfileSave)}>
                                     <CardContent className="space-y-6">
-                                        {isRiskProfileLoading ? <p>Loading risk profile...</p> : (
+                                        {isRiskProfileLoading ? (
+                                             <div className="space-y-6">
+                                                <Skeleton className="h-10 w-full" />
+                                                <Skeleton className="h-10 w-full" />
+                                                <Skeleton className="h-10 w-full" />
+                                            </div>
+                                        ) : (
                                         <>
                                             <FormField
                                                 control={riskForm.control}
@@ -227,8 +261,8 @@ export default function SettingsPage() {
                                         )}
                                     </CardContent>
                                     <CardFooter>
-                                        <Button type="submit" disabled={isSavingRisk || isRiskProfileLoading}>
-                                            {isSavingRisk && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        <Button type="submit" disabled={riskForm.formState.isSubmitting || isRiskProfileLoading}>
+                                            {riskForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             Save Risk Profile
                                         </Button>
                                     </CardFooter>
