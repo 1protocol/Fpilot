@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 
 export type ApiKey = {
     id: string;
@@ -450,7 +451,7 @@ export default function SettingsPage() {
                                             </DialogDescription>
                                         </DialogHeader>
                                         <Form {...apiKeyForm}>
-                                            <form onSubmit={apiKeyForm.handleSubmit(onApiKeySave)} className="space-y-4">
+                                            <form onSubmit={apiKeyForm.handleSubmit(onApiKeySave)} className="space-y-4 py-4">
                                                  <FormField
                                                     control={apiKeyForm.control}
                                                     name="exchange"
@@ -708,24 +709,37 @@ export default function SettingsPage() {
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                            <CardContent className="space-y-6">
-                                <div className="space-y-2">
-                                    <Label>Email Notifications</Label>
-                                    <Select defaultValue="important">
-                                        <SelectTrigger className="w-full md:w-[280px]">
-                                            <SelectValue placeholder="Select frequency" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All Notifications</SelectItem>
-                                            <SelectItem value="important">Only Important (Fills, Errors)</SelectItem>
-                                            <SelectItem value="none">No Emails</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                             <CardContent className="space-y-6">
+                                <div className="space-y-4">
+                                    <h4 className="font-medium">Email Notifications</h4>
+                                    <div className="flex items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                            <Label htmlFor="trade-alerts" className="text-base">Trade Alerts</Label>
+                                            <p className="text-sm text-muted-foreground">Receive an email when a trade order is filled.</p>
+                                        </div>
+                                        <Switch id="trade-alerts" />
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                            <Label htmlFor="bot-status" className="text-base">Bot Status</Label>
+                                            <p className="text-sm text-muted-foreground">Get notified if a bot encounters an error or stops unexpectedly.</p>
+                                        </div>
+                                        <Switch id="bot-status" />
+                                    </div>
                                 </div>
                                 <Separator />
-                                <div className="space-y-2">
-                                    <Label>Push Notifications</Label>
-                                    <p className="text-sm text-muted-foreground">Coming soon.</p>
+                                <div className="space-y-4">
+                                    <h4 className="font-medium">Push Notifications</h4>
+                                     <div className="flex items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                            <div className="flex items-center gap-2">
+                                                 <Label htmlFor="push-trade-alerts" className="text-base">Trade Alerts</Label>
+                                                 <Badge variant="outline">Soon</Badge>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">Receive a push notification for every filled order.</p>
+                                        </div>
+                                        <Switch id="push-trade-alerts" disabled />
+                                    </div>
                                 </div>
                             </CardContent>
                         </AccordionContent>
