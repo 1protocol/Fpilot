@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Bot, Loader2, PlusCircle, Trash2 } from "lucide-react";
+import { Bot, Loader2, PlusCircle, Trash2, X } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useFirebase, setDocumentNonBlocking, useDoc, useMemoFirebase, useCollection, deleteDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +14,7 @@ import { updateProfile } from "firebase/auth";
 import { doc, collection, serverTimestamp } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
@@ -25,8 +25,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-
 
 export type ApiKey = {
     id: string;
@@ -57,7 +55,6 @@ const aiConfigSchema = z.object({
     model: z.string().min(1, "Model name is required."),
     apiKey: z.string().optional(),
 }).refine(data => {
-    // API key is required for providers other than Google
     return data.provider === 'google' || (data.apiKey && data.apiKey.length > 0);
 }, {
     message: "API Key is required for this provider.",
@@ -90,7 +87,6 @@ export default function SettingsPage() {
     }, [user, firestore]);
     const { data: aiConfigData, isLoading: isAiConfigLoading } = useDoc(aiConfigDocRef);
 
-
     const profileForm = useForm<z.infer<typeof profileSchema>>({
         resolver: zodResolver(profileSchema),
         values: { 
@@ -116,16 +112,15 @@ export default function SettingsPage() {
         },
     });
 
-     const aiConfigForm = useForm<z.infer<typeof aiConfigSchema>>({
+    const aiConfigForm = useForm<z.infer<typeof aiConfigSchema>>({
         resolver: zodResolver(aiConfigSchema),
-        defaultValues: {
-            provider: "google",
-            model: "gemini-2.5-flash",
-            apiKey: "",
+        values: {
+            provider: aiConfigData?.provider ?? "google",
+            model: aiConfigData?.model ?? "gemini-2.5-flash",
+            apiKey: aiConfigData?.apiKey ?? "",
         },
     });
 
-    // Reset forms when user or data loads
     useEffect(() => {
         if (user) {
             profileForm.reset({ displayName: user.displayName || '' });
@@ -141,15 +136,18 @@ export default function SettingsPage() {
             });
         }
     }, [riskProfileData, riskForm]);
-
+    
     useEffect(() => {
         if (aiConfigData) {
-            aiConfigForm.reset(aiConfigData);
+            aiConfigForm.reset({
+                provider: aiConfigData.provider || 'google',
+                model: aiConfigData.model || 'gemini-2.5-flash',
+                apiKey: aiConfigData.apiKey || '',
+            });
         }
     }, [aiConfigData, aiConfigForm]);
 
     const watchedAiProvider = aiConfigForm.watch("provider");
-
 
     const onProfileSave = async (values: z.infer<typeof profileSchema>) => {
         if (!user || !auth || !firestore) return;
@@ -179,7 +177,13 @@ export default function SettingsPage() {
     const onAiConfigSave = async (values: z.infer<typeof aiConfigSchema>) => {
         if (!aiConfigDocRef) return;
         aiConfigForm.formState.isSubmitting;
-        setDocumentNonBlocking(aiConfigDocRef, values, { merge: true });
+        
+        let dataToSave = { ...values };
+        if (values.provider === "google") {
+            dataToSave.apiKey = ""; // Clear API key for Google provider
+        }
+
+        setDocumentNonBlocking(aiConfigDocRef, dataToSave, { merge: true });
         toast({ title: "AI Configuration Saved" });
     }
 
@@ -207,10 +211,23 @@ export default function SettingsPage() {
         toast({ title: "API Key Deleted" });
     };
 
-
     const getStatusBadgeVariant = (status: string) => {
         return status === "Active" ? "default" : "destructive";
     };
+
+    const MaskedApiKey = ({ apiKey }: { apiKey: string | undefined }) => {
+        if (!apiKey) return <span className="text-muted-foreground italic">Not set</span>;
+        const masked = `••••••••••••${apiKey.slice(-4)}`;
+        return (
+            <div className="flex items-center justify-between">
+                <span className="font-mono">{masked}</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => aiConfigForm.setValue("apiKey", "")}>
+                    <X className="h-4 w-4 text-muted-foreground" />
+                </Button>
+            </div>
+        );
+    };
+
 
     return (
         <div className="space-y-6">
@@ -552,120 +569,95 @@ export default function SettingsPage() {
                         <AccordionContent>
                             <Form {...aiConfigForm}>
                                 <form onSubmit={aiConfigForm.handleSubmit(onAiConfigSave)}>
-                                    <CardContent className="space-y-6">
+                                    <CardContent className="space-y-4">
                                         {isAiConfigLoading ? (
                                             <div className="space-y-4">
-                                                <Skeleton className="h-20 w-full" />
+                                                <Skeleton className="h-10 w-full" />
                                                 <Skeleton className="h-10 w-full" />
                                             </div>
-                                        ) : (
-                                            <FormField
-                                                control={aiConfigForm.control}
-                                                name="provider"
-                                                render={({ field }) => (
-                                                <FormItem className="space-y-3">
-                                                    <FormLabel>AI Provider</FormLabel>
-                                                    <FormControl>
-                                                        <RadioGroup
-                                                            onValueChange={field.onChange}
-                                                            defaultValue={field.value}
-                                                            className="grid grid-cols-2 gap-4"
-                                                        >
-                                                            <FormItem>
-                                                                <FormControl>
-                                                                    <RadioGroupItem value="google" id="google" className="sr-only" />
-                                                                </FormControl>
-                                                                <Label htmlFor="google" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                                                    <Bot className="mb-3 h-6 w-6" />
-                                                                    Google Gemini
-                                                                </Label>
-                                                            </FormItem>
-                                                             <FormItem>
-                                                                <FormControl>
-                                                                    <RadioGroupItem value="openai" id="openai" className="sr-only" />
-                                                                </FormControl>
-                                                                <Label htmlFor="openai" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                                                    <Bot className="mb-3 h-6 w-6" />
-                                                                    OpenAI
-                                                                </Label>
-                                                            </FormItem>
-                                                             <FormItem>
-                                                                <FormControl>
-                                                                    <RadioGroupItem value="anthropic" id="anthropic" className="sr-only" />
-                                                                </FormControl>
-                                                                <Label htmlFor="anthropic" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                                                    <Bot className="mb-3 h-6 w-6" />
-                                                                    Anthropic Claude
-                                                                </Label>
-                                                            </FormItem>
-                                                            <FormItem>
-                                                                <FormControl>
-                                                                    <RadioGroupItem value="deepseek" id="deepseek" className="sr-only" />
-                                                                </FormControl>
-                                                                <Label htmlFor="deepseek" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                                                    <Bot className="mb-3 h-6 w-6" />
-                                                                    DeepSeek
-                                                                </Label>
-                                                            </FormItem>
-                                                        </RadioGroup>
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                          />
-                                        )}
-
-                                        {watchedAiProvider === "google" ? (
-                                            <FormField
-                                                control={aiConfigForm.control}
-                                                name="model"
-                                                render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Language Model</FormLabel>
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                        <FormControl>
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Select model" />
-                                                            </SelectTrigger>
-                                                        </FormControl>
-                                                        <SelectContent>
-                                                            <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (Fast & Efficient)</SelectItem>
-                                                            <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro (Balanced)</SelectItem>
-                                                            <SelectItem value="gemini-2.5-ultra" disabled>Gemini 2.5 Ultra (Most Powerful)</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                          />
                                         ) : (
                                             <>
                                                 <FormField
                                                     control={aiConfigForm.control}
-                                                    name="apiKey"
+                                                    name="provider"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>API Key</FormLabel>
-                                                            <FormControl>
-                                                                <Input type="password" placeholder="Your API Key" {...field} />
-                                                            </FormControl>
+                                                            <FormLabel>AI Provider</FormLabel>
+                                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger>
+                                                                        <SelectValue placeholder="Select an AI provider" />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    <SelectItem value="google">Google Gemini</SelectItem>
+                                                                    <SelectItem value="openai">OpenAI</SelectItem>
+                                                                    <SelectItem value="anthropic">Anthropic Claude</SelectItem>
+                                                                    <SelectItem value="deepseek">DeepSeek</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
                                                             <FormMessage />
                                                         </FormItem>
                                                     )}
                                                 />
-                                                <FormField
-                                                    control={aiConfigForm.control}
-                                                    name="model"
-                                                    render={({ field }) => (
+
+                                                {watchedAiProvider === "google" ? (
+                                                    <FormField
+                                                        control={aiConfigForm.control}
+                                                        name="model"
+                                                        render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>Model Name</FormLabel>
-                                                            <FormControl>
-                                                                <Input placeholder="e.g., gpt-4o, claude-3-opus-20240229" {...field} />
-                                                            </FormControl>
+                                                            <FormLabel>Language Model</FormLabel>
+                                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger>
+                                                                        <SelectValue placeholder="Select model" />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (Fast & Efficient)</SelectItem>
+                                                                    <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro (Balanced)</SelectItem>
+                                                                    <SelectItem value="gemini-2.5-ultra" disabled>Gemini 2.5 Ultra (Most Powerful)</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
                                                             <FormMessage />
                                                         </FormItem>
                                                     )}
                                                 />
+                                                ) : (
+                                                    <>
+                                                        <Controller
+                                                            control={aiConfigForm.control}
+                                                            name="apiKey"
+                                                            render={({ field, fieldState }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>API Key</FormLabel>
+                                                                    <FormControl>
+                                                                        {field.value ? (
+                                                                            <MaskedApiKey apiKey={field.value} />
+                                                                        ) : (
+                                                                            <Input type="password" placeholder="Your API Key" {...field} />
+                                                                        )}
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={aiConfigForm.control}
+                                                            name="model"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Model Name</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input placeholder="e.g., gpt-4o, claude-3-opus-20240229" {...field} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </>
+                                                )}
                                             </>
                                         )}
                                     </CardContent>
