@@ -844,7 +844,7 @@ export default function SettingsPage() {
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>Language</Label>
-                                    <Select defaultValue="en">
+                                    <Select defaultValue="tr">
                                         <SelectTrigger className="w-full md:w-[280px]">
                                             <SelectValue placeholder="Select language" />
                                         </SelectTrigger>
@@ -885,5 +885,3 @@ export default function SettingsPage() {
         </div>
     );
 }
-
-    

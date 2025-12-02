@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Play, Pause, Trash2, Bot, PlusCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp, doc, addDoc } from 'firebase/firestore';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import type { Strategy } from '@/components/strategies/strategy-list';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -74,9 +74,13 @@ export default function AiBotsPage() {
                     // 1. Simulate P&L change
                     const pnlChange = (Math.random() - 0.45) * 10;
                     const newPnl = bot.pnl + pnlChange;
+                    
+                    // Optimistic UI update for smoother experience
+                    setLocalBots((currentBots) => currentBots.map(b => b.id === bot.id ? { ...b, pnl: newPnl } : b));
+                    
+                    // Non-blocking Firestore update
                     const botDocRef = doc(firestore, 'users', user.uid, 'ai_bots', bot.id);
                     setDocumentNonBlocking(botDocRef, { pnl: newPnl }, { merge: true });
-                     setLocalBots((currentBots) => currentBots.map(b => b.id === bot.id ? { ...b, pnl: newPnl } : b));
 
                     // 2. ~20% chance to generate a trading signal every interval
                     if (Math.random() < 0.2) {
@@ -161,9 +165,9 @@ export default function AiBotsPage() {
         const newStatus = bot.status === 'Active' ? 'Paused' : 'Active';
         const botDocRef = doc(firestore, 'users', user.uid, 'ai_bots', bot.id);
         
-        setDocumentNonBlocking(botDocRef, { status: newStatus }, { merge: true });
         // Optimistic update
         setLocalBots(prev => prev.map(b => b.id === bot.id ? { ...b, status: newStatus } : b));
+        setDocumentNonBlocking(botDocRef, { status: newStatus }, { merge: true });
     };
 
     const handleDeleteBot = (botId: string) => {
