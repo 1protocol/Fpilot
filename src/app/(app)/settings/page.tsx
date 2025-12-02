@@ -23,9 +23,10 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
+import { useTheme } from "@/hooks/use-theme";
 
 export type ApiKey = {
     id: string;
@@ -82,6 +83,54 @@ const providerModels = {
         { value: "deepseek-chat", label: "DeepSeek-V2 Chat" },
         { value: "deepseek-coder", label: "DeepSeek-V2 Coder" },
     ]
+}
+
+const ThemeCustomizer = () => {
+    const { theme, setTheme, isLoading } = useTheme();
+
+    if (isLoading) {
+        return (
+             <div className="space-y-6">
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-5 w-full" />
+                </div>
+                 <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-5 w-full" />
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                    <Label>Primary Color Hue</Label>
+                    <span className="text-sm font-mono text-muted-foreground">{theme?.primaryHue}</span>
+                </div>
+                <Slider 
+                    value={[theme?.primaryHue ?? 275]}
+                    onValueChange={(value) => setTheme({ primaryHue: value[0] })}
+                    max={360}
+                    step={1}
+                />
+            </div>
+             <div className="space-y-2">
+                 <div className="flex justify-between items-center">
+                    <Label>Accent Color Hue</Label>
+                    <span className="text-sm font-mono text-muted-foreground">{theme?.accentHue}</span>
+                </div>
+                <Slider 
+                    value={[theme?.accentHue ?? 258]}
+                    onValueChange={(value) => setTheme({ accentHue: value[0] })}
+                    max={360}
+                    step={1}
+                />
+            </div>
+        </div>
+    )
 }
 
 export default function SettingsPage() {
@@ -182,7 +231,7 @@ export default function SettingsPage() {
         };
         const newProvider = aiConfigForm.getValues('provider');
         // Only reset if the current model is not valid for the new provider
-        const currentModelIsValid = providerModels[newProvider]?.some(m => m.value === aiConfigForm.getValues('model'));
+        const currentModelIsValid = providerModels[newProvider as keyof typeof providerModels]?.some(m => m.value === aiConfigForm.getValues('model'));
         
         if (!currentModelIsValid) {
             aiConfigForm.setValue('model', defaultModels[newProvider]);
@@ -655,7 +704,7 @@ export default function SettingsPage() {
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
-                                                                {(providerModels[watchedAiProvider] || []).map((model) => (
+                                                                {(providerModels[watchedAiProvider as keyof typeof providerModels] || []).map((model) => (
                                                                     <SelectItem key={model.value} value={model.value} disabled={model.disabled}>
                                                                         {model.label}
                                                                     </SelectItem>
@@ -789,11 +838,8 @@ export default function SettingsPage() {
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Theme</Label>
-                                    <p className="text-sm text-muted-foreground">Theme customization will be available soon.</p>
-                                </div>
+                            <CardContent>
+                                <ThemeCustomizer />
                             </CardContent>
                         </AccordionContent>
                     </Card>
