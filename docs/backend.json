@@ -227,6 +227,11 @@
           "type": "string",
           "description": "The user's username."
         },
+        "photoURL": {
+            "type": "string",
+            "description": "URL to the user's profile picture.",
+            "format": "uri"
+        },
         "riskProfileId": {
           "type": "string",
           "description": "Reference to RiskProfile. (Relationship: User 1:1 RiskProfile)"

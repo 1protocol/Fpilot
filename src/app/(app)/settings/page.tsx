@@ -27,6 +27,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/hooks/use-theme";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export type ApiKey = {
     id: string;
@@ -38,6 +39,7 @@ export type ApiKey = {
 
 const profileSchema = z.object({
   displayName: z.string().min(3, { message: "Name must be at least 3 characters." }),
+  photoURL: z.string().url({ message: "Please enter a valid URL." }).or(z.literal('')),
 });
 
 const riskProfileSchema = z.object({
@@ -163,6 +165,7 @@ export default function SettingsPage() {
         resolver: zodResolver(profileSchema),
         values: { 
             displayName: user?.displayName || '',
+            photoURL: user?.photoURL || '',
         },
     });
 
@@ -195,7 +198,10 @@ export default function SettingsPage() {
 
     useEffect(() => {
         if (user) {
-            profileForm.reset({ displayName: user.displayName || '' });
+            profileForm.reset({ 
+                displayName: user.displayName || '',
+                photoURL: user.photoURL || '',
+            });
         }
     }, [user, profileForm]);
 
@@ -220,6 +226,7 @@ export default function SettingsPage() {
     }, [aiConfigData, aiConfigForm]);
 
     const watchedAiProvider = aiConfigForm.watch("provider");
+    const watchedPhotoUrl = profileForm.watch("photoURL");
 
     // Reset model when provider changes
     useEffect(() => {
@@ -244,9 +251,15 @@ export default function SettingsPage() {
         if (!user || !auth || !firestore) return;
         profileForm.formState.isSubmitting;
         try {
-            await updateProfile(user, { displayName: values.displayName });
+            await updateProfile(user, { 
+                displayName: values.displayName,
+                photoURL: values.photoURL,
+            });
             const userDocRef = doc(firestore, "users", user.uid);
-            setDocumentNonBlocking(userDocRef, { username: values.displayName }, { merge: true });
+            setDocumentNonBlocking(userDocRef, { 
+                username: values.displayName,
+                photoURL: values.photoURL 
+            }, { merge: true });
             toast({ title: "Profile Updated" });
         } catch (error: any) {
             toast({ variant: "destructive", title: "Error", description: error.message });
@@ -332,43 +345,67 @@ export default function SettingsPage() {
                         <AccordionTrigger className="p-6 hover:no-underline">
                              <div className="text-left">
                                 <CardTitle>Profile</CardTitle>
-                                <CardDescription className="mt-1.5">Update your personal information.</CardDescription>
+                                <CardDescription className="mt-1.5">Update your personal information and avatar.</CardDescription>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
                             <Form {...profileForm}>
                                 <form onSubmit={profileForm.handleSubmit(onProfileSave)}>
-                                    <CardContent className="space-y-4">
-                                        {isUserLoading ? (
-                                            <div className="space-y-4">
-                                                <Skeleton className="h-6 w-24" />
-                                                <Skeleton className="h-10 w-full" />
-                                                <Skeleton className="h-6 w-24" />
-                                                <Skeleton className="h-10 w-full" />
-                                            </div>
-                                        ) : user ? (
-                                            <>
-                                                <FormField
-                                                    control={profileForm.control}
-                                                    name="displayName"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Full Name</FormLabel>
-                                                            <FormControl>
-                                                                <Input {...field} />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                                <FormItem>
-                                                    <FormLabel>Email</FormLabel>
-                                                    <Input type="email" value={user.email || ''} readOnly disabled />
-                                                </FormItem>
-                                            </>
-                                        ) : (
-                                            <p className="text-muted-foreground">Please log in to manage your profile.</p>
-                                        )}
+                                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="md:col-span-2 space-y-4">
+                                            {isUserLoading ? (
+                                                <div className="space-y-4">
+                                                    <Skeleton className="h-6 w-24" />
+                                                    <Skeleton className="h-10 w-full" />
+                                                    <Skeleton className="h-6 w-24" />
+                                                    <Skeleton className="h-10 w-full" />
+                                                </div>
+                                            ) : user ? (
+                                                <>
+                                                    <FormField
+                                                        control={profileForm.control}
+                                                        name="displayName"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Full Name</FormLabel>
+                                                                <FormControl>
+                                                                    <Input {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormItem>
+                                                        <FormLabel>Email</FormLabel>
+                                                        <Input type="email" value={user.email || ''} readOnly disabled />
+                                                    </FormItem>
+                                                    <FormField
+                                                        control={profileForm.control}
+                                                        name="photoURL"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Avatar URL</FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="https://example.com/avatar.png" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </>
+                                            ) : (
+                                                <p className="text-muted-foreground">Please log in to manage your profile.</p>
+                                            )}
+                                        </div>
+                                         <div className="md:col-span-1 flex flex-col items-center justify-center space-y-2">
+                                            <Avatar className="h-24 w-24 border">
+                                                <AvatarImage src={watchedPhotoUrl} />
+                                                <AvatarFallback>
+                                                    {user?.displayName?.charAt(0) || 'U'}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <p className="text-sm text-muted-foreground">Avatar Preview</p>
+                                        </div>
                                     </CardContent>
                                     <CardFooter>
                                         <Button type="submit" disabled={profileForm.formState.isSubmitting || isUserLoading}>

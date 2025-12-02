@@ -7,6 +7,7 @@ import { useUser, useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 
 const navItems = [
@@ -51,7 +52,10 @@ function UserProfileArea() {
     return (
         <div className="p-2 space-y-2">
             <div className="flex items-center gap-3">
-                 <User className="size-8 rounded-full p-1.5 bg-sidebar-accent text-sidebar-accent-foreground"/>
+                 <Avatar className="size-8">
+                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'}/>
+                    <AvatarFallback>{user.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}</AvatarFallback>
+                </Avatar>
                  <div className="flex flex-col group-data-[collapsible=icon]:hidden">
                     <span className="text-sm font-medium truncate">{user.displayName || 'User'}</span>
                     <span className="text-xs text-sidebar-foreground/70 truncate">{user.email}</span>
