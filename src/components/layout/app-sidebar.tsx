@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { BrainCircuit, CandlestickChart, LayoutDashboard, Settings, SlidersHorizontal, Database, BarChart, LogOut, User } from 'lucide-react';
+import { BrainCircuit, CandlestickChart, LayoutDashboard, Settings, SlidersHorizontal, Database, BarChart, LogOut, User, Bot } from 'lucide-react';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { useUser, useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/ai-bots', icon: Bot, label: 'AI Bots' },
     { href: '/strategies', icon: SlidersHorizontal, label: 'Strategies' },
     { href: '/analytics', icon: BarChart, label: 'Analytics' },
     { href: '/backtesting', icon: CandlestickChart, label: 'Backtesting' },

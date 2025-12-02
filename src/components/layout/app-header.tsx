@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 
 const pageTitles: { [key: string]: string } = {
   '/dashboard': 'Dashboard',
+  '/ai-bots': 'AI Bots',
   '/strategies': 'Trading Strategies',
   '/analytics': 'Analytics Engine',
   '/backtesting': 'Backtesting & Validation',

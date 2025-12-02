@@ -278,6 +278,52 @@
         "status",
         "createdAt"
       ]
+    },
+     "AIBot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AIBot",
+      "type": "object",
+      "description": "Represents a live, running instance of a user's trading strategy.",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this bot."
+        },
+        "strategyId": {
+          "type": "string",
+          "description": "The ID of the strategy this bot is running."
+        },
+        "name": {
+          "type": "string",
+          "description": "A user-friendly name for the bot."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the bot (e.g., Active, Paused, Error)."
+        },
+        "pnl": {
+            "type": "number",
+            "description": "The current profit and loss of the bot."
+        },
+        "uptime": {
+            "type": "string",
+            "description": "The duration the bot has been active."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the bot was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "strategyId",
+        "name",
+        "status",
+        "pnl",
+        "uptime",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -412,6 +458,26 @@
             {
               "name": "strategyId",
               "description": "The strategy's unique ID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/ai_bots/{aiBotId}",
+        "definition": {
+          "entityName": "AIBot",
+          "schema": {
+            "$ref": "#/backend/entities/AIBot"
+          },
+          "description": "Stores live, running instances of a user's trading strategies (bots). Access is restricted to the user themselves.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The user's unique ID."
+            },
+            {
+              "name": "aiBotId",
+              "description": "The bot's unique ID."
             }
           ]
         }
