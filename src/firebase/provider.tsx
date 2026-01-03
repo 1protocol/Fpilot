@@ -166,11 +166,29 @@ export const useUser = (): UserHookResult => {
 
 type MemoFirebase <T> = T & {__memo?: boolean};
 
+/**
+ * A hook to safely memoize Firebase queries and references.
+ * This is a critical utility to prevent infinite loops in `useCollection` and `useDoc`.
+ * It wraps React's `useMemo` and adds a special marker to the returned object.
+ * The `useCollection` and `useDoc` hooks will check for this marker and throw an
+ * error if it's not present, ensuring that all data-fetching hooks are used safely.
+ *
+ * @param factory A function that creates the Firebase query or reference.
+ * @param deps A dependency array, similar to `useMemo`. The factory is re-run when these change.
+ * @returns The memoized Firebase query or reference, marked as safe.
+ */
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (MemoFirebase<T>) {
   const memoized = useMemo(factory, deps);
   
   if(typeof memoized !== 'object' || memoized === null) return memoized;
-  (memoized as MemoFirebase<T>).__memo = true;
+  
+  // Attach a non-enumerable property to mark this object as memoized.
+  Object.defineProperty(memoized, '__memo', {
+    value: true,
+    writable: false,
+    configurable: true,
+    enumerable: false,
+  });
   
   return memoized;
 }
