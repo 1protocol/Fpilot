@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { CandlestickChart, LayoutDashboard, Settings, SlidersHorizontal, Database, BarChart, LogOut, User, Bot } from 'lucide-react';
+import { CandlestickChart, LayoutDashboard, Settings, SlidersHorizontal, Database, BarChart, LogOut, User, Bot, Target } from 'lucide-react';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
 import { useUser, useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -77,10 +77,10 @@ export default function AppSidebar() {
     return (
         <Sidebar>
             <SidebarHeader>
-                <div className="flex items-center gap-2 p-2 justify-center group-data-[collapsible=icon]:justify-start">
-                    <Bot className="w-8 h-8 text-accent" />
-                    <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-                        <h1 className="text-xl font-headline font-bold text-foreground">FPILOT</h1>
+                 <div className="flex items-center gap-2 p-2 justify-center group-data-[collapsible=icon]:justify-start">
+                    <div className="flex items-center gap-2.5">
+                        <Target className="w-7 h-7 text-accent" />
+                        <h1 className="text-xl font-headline font-bold text-foreground group-data-[collapsible=icon]:hidden">FPILOT</h1>
                     </div>
                 </div>
             </SidebarHeader>

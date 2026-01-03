@@ -19,7 +19,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import { Loader2, Bot } from 'lucide-react';
+import { Loader2, Target } from 'lucide-react';
 import Link from 'next/link';
 
 const formSchema = z.object({
@@ -72,7 +72,7 @@ export default function LoginPage() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <Bot className="mx-auto h-12 w-12 text-accent" />
+        <Target className="mx-auto h-12 w-12 text-accent" />
         <CardTitle className="mt-4 font-headline text-2xl font-bold">Welcome Back to FPILOT</CardTitle>
         <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
       </CardHeader>

@@ -20,7 +20,7 @@ import { doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import { Loader2, Bot } from 'lucide-react';
+import { Loader2, Target } from 'lucide-react';
 import Link from 'next/link';
 
 const formSchema = z.object({
@@ -98,7 +98,7 @@ export default function SignupPage() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <Bot className="mx-auto h-12 w-12 text-accent" />
+        <Target className="mx-auto h-12 w-12 text-accent" />
         <CardTitle className="mt-4 font-headline text-2xl font-bold">Create Your FPILOT Account</CardTitle>
         <CardDescription>Join the future of algorithmic trading.</CardDescription>
       </CardHeader>
