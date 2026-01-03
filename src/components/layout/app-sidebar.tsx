@@ -80,7 +80,7 @@ export default function AppSidebar() {
                 <div className="flex items-center gap-2 p-2 justify-center group-data-[collapsible=icon]:justify-start">
                     <BrainCircuit className="w-8 h-8 text-accent" />
                     <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-                        <h1 className="text-xl font-headline font-bold text-foreground">CryptoSage</h1>
+                        <h1 className="text-xl font-headline font-bold text-foreground">FPILOT</h1>
                     </div>
                 </div>
             </SidebarHeader>

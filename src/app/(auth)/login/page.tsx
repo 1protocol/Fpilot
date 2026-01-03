@@ -73,7 +73,7 @@ export default function LoginPage() {
     <Card>
       <CardHeader className="text-center">
         <Bot className="mx-auto h-12 w-12 text-accent" />
-        <CardTitle className="mt-4 font-headline text-2xl font-bold">Welcome Back to CryptoSage</CardTitle>
+        <CardTitle className="mt-4 font-headline text-2xl font-bold">Welcome Back to FPILOT</CardTitle>
         <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
       </CardHeader>
       <CardContent>

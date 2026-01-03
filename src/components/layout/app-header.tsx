@@ -16,7 +16,7 @@ const pageTitles: { [key: string]: string } = {
 
 export default function AppHeader() {
     const pathname = usePathname();
-    const title = pageTitles[pathname] || 'CryptoSage';
+    const title = pageTitles[pathname] || 'FPILOT';
 
     return (
         <header className="sticky top-0 z-10 flex h-16 items-center border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 lg:px-8">

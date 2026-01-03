@@ -1,6 +1,6 @@
-# CryptoSage: AI-Powered Algorithmic Trading Platform
+# FPILOT: Neural Finance Trader
 
-CryptoSage, bireysel ve kurumsal yatırımcılar için tasarlanmış, yapay zeka destekli, kurumsal düzeyde bir algoritmik trading platformudur. Kullanıcıların doğal dil kullanarak trading stratejileri oluşturmasına, bu stratejileri geçmiş verilerle test etmesine (backtesting), piyasa koşullarına göre optimize etmesine ve canlı piyasa verilerini izlemesine olanak tanır.
+FPILOT, bireysel ve kurumsal yatırımcılar için tasarlanmış, yapay zeka destekli, kurumsal düzeyde bir algoritmik trading platformudur. Kullanıcıların doğal dil kullanarak trading stratejileri oluşturmasına, bu stratejileri geçmiş verilerle test etmesine (backtesting), piyasa koşullarına göre optimize etmesine ve canlı piyasa verilerini izlemesine olanak tanır.
 
 ## Core Features
 

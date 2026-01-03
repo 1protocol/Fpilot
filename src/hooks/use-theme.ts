@@ -13,7 +13,7 @@ export function useTheme() {
   // Load theme from localStorage on initial client-side render
   useEffect(() => {
     try {
-      const storedTheme = localStorage.getItem('crypto-sage-theme');
+      const storedTheme = localStorage.getItem('fpilot-theme');
       if (storedTheme) {
         setTheme(JSON.parse(storedTheme));
       } else {
@@ -32,7 +32,7 @@ export function useTheme() {
       document.documentElement.style.setProperty('--primary-hue', theme.primaryHue.toString());
       document.documentElement.style.setProperty('--accent-hue', theme.accentHue.toString());
       try {
-          localStorage.setItem('crypto-sage-theme', JSON.stringify(theme));
+          localStorage.setItem('fpilot-theme', JSON.stringify(theme));
       } catch (error) {
           console.error("Failed to save theme to localStorage", error);
       }

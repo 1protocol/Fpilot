@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'CryptoSage',
-  description: 'Institutional-Grade Algorithmic Trading Platform',
+  title: 'FPILOT',
+  description: 'Neural Finance Trader',
 };
 
 export default function RootLayout({

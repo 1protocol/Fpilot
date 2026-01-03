@@ -99,7 +99,7 @@ export default function SignupPage() {
     <Card>
       <CardHeader className="text-center">
         <Bot className="mx-auto h-12 w-12 text-accent" />
-        <CardTitle className="mt-4 font-headline text-2xl font-bold">Create Your CryptoSage Account</CardTitle>
+        <CardTitle className="mt-4 font-headline text-2xl font-bold">Create Your FPILOT Account</CardTitle>
         <CardDescription>Join the future of algorithmic trading.</CardDescription>
       </CardHeader>
       <CardContent>
