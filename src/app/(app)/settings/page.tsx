@@ -113,7 +113,7 @@ const ThemeCustomizer = () => {
                     <span className="text-sm font-mono text-muted-foreground">{theme?.primaryHue}</span>
                 </div>
                 <Slider 
-                    value={[theme?.primaryHue ?? 275]}
+                    value={[theme?.primaryHue ?? 220]}
                     onValueChange={(value) => setTheme({ primaryHue: value[0] })}
                     max={360}
                     step={1}
@@ -125,7 +125,7 @@ const ThemeCustomizer = () => {
                     <span className="text-sm font-mono text-muted-foreground">{theme?.accentHue}</span>
                 </div>
                 <Slider 
-                    value={[theme?.accentHue ?? 258]}
+                    value={[theme?.accentHue ?? 175]}
                     onValueChange={(value) => setTheme({ accentHue: value[0] })}
                     max={360}
                     step={1}

@@ -18,11 +18,11 @@ export function useTheme() {
         setTheme(JSON.parse(storedTheme));
       } else {
         // Default theme if nothing is stored
-        setTheme({ primaryHue: 275, accentHue: 258 });
+        setTheme({ primaryHue: 220, accentHue: 175 });
       }
     } catch (error) {
         // Fallback to default on any error
-        setTheme({ primaryHue: 275, accentHue: 258 });
+        setTheme({ primaryHue: 220, accentHue: 175 });
     }
   }, []);
 
