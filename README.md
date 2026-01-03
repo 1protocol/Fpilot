@@ -9,11 +9,17 @@ Kullanıcıların tüm trading aktivitelerini ve piyasa durumunu tek bir yerden 
 - **Portfolio Performance:** Canlı portföy değeri grafiği.
 - **Live Market Data:** Entegre borsalardan (Binance, Bybit, Coinbase vb.) gelen gerçek zamanlı piyasa verileri.
 - **Risk Metrics:** Kişiselleştirilmiş risk metriklerinin (VaR, CVaR, Max Drawdown) anlık takibi.
-- **Recent Orders:** Gerçekleştirilen son emirlerin canlı durumu (Filled, Working, Canceled).
+- **Recent Orders:** AI Bot'lar tarafından oluşturulan emirlerin canlı durumu (`Working`, `Filled`, `Canceled`).
 - **AI Market Sentiment:** Seçilen kripto para için sosyal medya ve haber kaynaklarından derlenen yapay zeka destekli piyasa duyarlılık özeti.
 - **System Health:** Veri akışı, API bağlantısı gibi tüm sistem bileşenlerinin anlık sağlık durumu.
 
-### 🤖 Strategies
+### 🤖 AI Bots
+Canlı trading botlarını yönetme merkezi. 
+- **Bot Management:** Mevcut stratejilerden AI botları oluşturun, başlatın, duraklatın ve silin.
+- **Live Signal Generation:** "Aktif" durumdaki botlar, periyodik olarak AI kullanarak piyasayı analiz eder ve "Al/Sat/Tut" sinyalleri üretir.
+- **Automated Order Creation:** Üretilen "Al" veya "Sat" sinyalleri, anında "Recent Orders" paneline yansıyan gerçek ticaret emirlerine dönüştürülür.
+
+### 📜 Strategies
 Yapay zeka ile trading stratejileri oluşturma, yönetme ve optimize etme merkezi.
 - **Strategy List:** Kullanıcıya ait tüm stratejilerin modern bir kart görünümünde listelenmesi.
 - **Generate with AI:** Doğal dil (prompt) kullanarak sıfırdan, çalışan bir trading stratejisi (Typescript kodu) ve açıklaması oluşturma.
@@ -32,10 +38,11 @@ Oluşturulan stratejilerin geçmiş performansını test etmek için kullanılan
 
 ### ⚙️ Settings
 Platformun ve kullanıcı hesabının tüm ayarlarının yönetildiği bölüm.
-- **Profile Management:** Kullanıcı adı ve e-posta gibi kişisel bilgilerin güncellenmesi.
-- **Risk Management:** Kullanıcının kendi risk iştahını (Value at Risk, Max Position Size vb.) tanımlayıp kaydetmesine olanak tanıyan kişisel risk profili yönetimi. Bu profil, AI'nin üreteceği sinyalleri etkiler.
+- **Profile Management:** Kullanıcı adı ve avatar URL'i gibi kişisel bilgilerin güncellenmesi.
+- **Risk Management:** Kullanıcının kendi risk iştahını (Value at Risk, Max Position Size vb.) tanımlayıp kaydetmesine olanak tanıyan kişisel risk profili yönetimi.
 - **API Keys:** Canlı trading için borsa API anahtarlarının yönetimi.
-- **Notifications & Appearance:** Bildirim ve tema ayarları.
+- **AI Management:** Kullanılan AI sağlayıcısını (Google, OpenAI vb.) ve ilgili dil modelini dinamik seçim kutularıyla yapılandırma.
+- **Appearance:** Ana ve vurgu renklerini canlı olarak değiştirerek platformun görünümünü kişiselleştirme.
 
 ## Tech Stack
 
