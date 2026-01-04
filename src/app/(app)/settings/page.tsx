@@ -28,6 +28,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/hooks/use-theme";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useLocale } from "@/context/locale-provider";
 
 export type ApiKey = {
     id: string;
@@ -139,6 +140,7 @@ export default function SettingsPage() {
     const { user, auth, firestore, isUserLoading } = useFirebase();
     const { toast } = useToast();
     const [isAddKeyOpen, setAddKeyOpen] = useState(false);
+    const { locale, setLocale, t } = useLocale();
     
     // Risk Profile Data
     const riskProfileDocRef = useMemoFirebase(() => {
@@ -336,16 +338,16 @@ export default function SettingsPage() {
     return (
         <div className="space-y-6">
             <PageHeader
-                title="Settings"
-                description="Manage your account, API keys, and platform preferences."
+                title={t('settings_title')}
+                description={t('settings_description')}
             />
             <Accordion type="single" collapsible className="w-full space-y-4" defaultValue="profile">
                 <AccordionItem value="profile">
                     <Card>
                         <AccordionTrigger className="p-6 hover:no-underline">
                              <div className="text-left">
-                                <CardTitle>Profile</CardTitle>
-                                <CardDescription className="mt-1.5">Update your personal information and avatar.</CardDescription>
+                                <CardTitle>{t('profile_title')}</CardTitle>
+                                <CardDescription className="mt-1.5">{t('profile_description')}</CardDescription>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
@@ -423,8 +425,8 @@ export default function SettingsPage() {
                      <Card>
                         <AccordionTrigger className="p-6 hover:no-underline">
                              <div className="text-left">
-                                <CardTitle>Risk Management</CardTitle>
-                                <CardDescription className="mt-1.5">Define your personal risk parameters for AI-driven actions.</CardDescription>
+                                <CardTitle>{t('risk_management_title')}</CardTitle>
+                                <CardDescription className="mt-1.5">{t('risk_management_description')}</CardDescription>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
@@ -518,8 +520,8 @@ export default function SettingsPage() {
                      <Card>
                         <AccordionTrigger className="p-6 hover:no-underline">
                             <div className="text-left">
-                                <CardTitle>API Keys</CardTitle>
-                                <CardDescription className="mt-1.5">Manage your exchange API keys for live trading.</CardDescription>
+                                <CardTitle>{t('api_keys_title')}</CardTitle>
+                                <CardDescription className="mt-1.5">{t('api_keys_description')}</CardDescription>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
@@ -690,8 +692,8 @@ export default function SettingsPage() {
                      <Card>
                         <AccordionTrigger className="p-6 hover:no-underline">
                              <div className="text-left">
-                                <CardTitle>AI Advisor</CardTitle>
-                                <CardDescription className="mt-1.5">Configure AI models and get proactive recommendations.</CardDescription>
+                                <CardTitle>{t('ai_advisor_title')}</CardTitle>
+                                <CardDescription className="mt-1.5">{t('ai_advisor_description')}</CardDescription>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
@@ -805,8 +807,8 @@ export default function SettingsPage() {
                      <Card>
                         <AccordionTrigger className="p-6 hover:no-underline">
                              <div className="text-left">
-                                <CardTitle>Notifications</CardTitle>
-                                <CardDescription className="mt-1.5">Choose how you want to be notified.</CardDescription>
+                                <CardTitle>{t('notifications_title')}</CardTitle>
+                                <CardDescription className="mt-1.5">{t('notifications_description')}</CardDescription>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
@@ -851,15 +853,15 @@ export default function SettingsPage() {
                     <Card>
                         <AccordionTrigger className="p-6 hover:no-underline">
                              <div className="text-left">
-                                <CardTitle>Language &amp; Region</CardTitle>
-                                <CardDescription className="mt-1.5">Choose the language and region for your account.</CardDescription>
+                                <CardTitle>{t('language_region_title')}</CardTitle>
+                                <CardDescription className="mt-1.5">{t('language_region_description')}</CardDescription>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Language</Label>
-                                    <Select defaultValue="tr">
+                                    <Label>{t('language_label')}</Label>
+                                    <Select value={locale} onValueChange={(value) => setLocale(value as 'en' | 'tr')}>
                                         <SelectTrigger className="w-full md:w-[280px]">
                                             <SelectValue placeholder="Select language" />
                                         </SelectTrigger>
@@ -885,8 +887,8 @@ export default function SettingsPage() {
                     <Card>
                         <AccordionTrigger className="p-6 hover:no-underline">
                              <div className="text-left">
-                                <CardTitle>Appearance</CardTitle>
-                                <CardDescription className="mt-1.5">Customize the look and feel of the application.</CardDescription>
+                                <CardTitle>{t('appearance_title')}</CardTitle>
+                                <CardDescription className="mt-1.5">{t('appearance_description')}</CardDescription>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
@@ -900,5 +902,3 @@ export default function SettingsPage() {
         </div>
     );
 }
-
-    

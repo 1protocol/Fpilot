@@ -1,0 +1,19 @@
+{
+    "settings_title": "Settings",
+    "settings_description": "Manage your account, API keys, and platform preferences.",
+    "profile_title": "Profile",
+    "profile_description": "Update your personal information and avatar.",
+    "risk_management_title": "Risk Management",
+    "risk_management_description": "Define your personal risk parameters for AI-driven actions.",
+    "api_keys_title": "API Keys",
+    "api_keys_description": "Manage your exchange API keys for live trading.",
+    "ai_advisor_title": "AI Advisor",
+    "ai_advisor_description": "Configure AI models and get proactive recommendations.",
+    "notifications_title": "Notifications",
+    "notifications_description": "Choose how you want to be notified.",
+    "language_region_title": "Language & Region",
+    "language_region_description": "Choose the language and region for your account.",
+    "language_label": "Language",
+    "appearance_title": "Appearance",
+    "appearance_description": "Customize the look and feel of the application."
+}

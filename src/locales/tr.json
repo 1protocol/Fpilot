@@ -1,0 +1,19 @@
+{
+    "settings_title": "Ayarlar",
+    "settings_description": "Hesabınızı, API anahtarlarınızı ve platform tercihlerinizi yönetin.",
+    "profile_title": "Profil",
+    "profile_description": "Kişisel bilgilerinizi ve avatarınızı güncelleyin.",
+    "risk_management_title": "Risk Yönetimi",
+    "risk_management_description": "AI güdümlü eylemler için kişisel risk parametrelerinizi tanımlayın.",
+    "api_keys_title": "API Anahtarları",
+    "api_keys_description": "Canlı ticaret için borsa API anahtarlarınızı yönetin.",
+    "ai_advisor_title": "AI Danışmanı",
+    "ai_advisor_description": "AI modellerini yapılandırın ve proaktif öneriler alın.",
+    "notifications_title": "Bildirimler",
+    "notifications_description": "Nasıl bildirim almak istediğinizi seçin.",
+    "language_region_title": "Dil & Bölge",
+    "language_region_description": "Hesabınız için dil ve bölge seçin.",
+    "language_label": "Dil",
+    "appearance_title": "Görünüm",
+    "appearance_description": "Uygulamanın görünümünü ve hissini özelleştirin."
+}
