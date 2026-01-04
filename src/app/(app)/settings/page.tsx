@@ -493,7 +493,7 @@ export default function SettingsPage() {
                                                                 min={0} max={100} step={1}
                                                                 onValueChange={(vals) => field.onChange(vals[0])}
                                                                 value={[field.value]}
-                                                                />
+                                                            />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -686,102 +686,117 @@ export default function SettingsPage() {
                     </Card>
                 </AccordionItem>
 
-                 <AccordionItem value="ai-management">
+                 <AccordionItem value="ai-advisor">
                      <Card>
                         <AccordionTrigger className="p-6 hover:no-underline">
                              <div className="text-left">
-                                <CardTitle>AI Management</CardTitle>
-                                <CardDescription className="mt-1.5">Configure the AI models used by the platform.</CardDescription>
+                                <CardTitle>AI Advisor</CardTitle>
+                                <CardDescription className="mt-1.5">Configure AI models and get proactive recommendations.</CardDescription>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                            <Form {...aiConfigForm}>
-                                <form onSubmit={aiConfigForm.handleSubmit(onAiConfigSave)}>
-                                    <CardContent className="space-y-4">
-                                        {isAiConfigLoading ? (
-                                            <div className="space-y-4">
-                                                <Skeleton className="h-10 w-full" />
-                                                <Skeleton className="h-10 w-full" />
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <FormField
-                                                    control={aiConfigForm.control}
-                                                    name="provider"
-                                                    render={({ field }) => (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 pt-0">
+                                <div className="space-y-6">
+                                    <h3 className="text-lg font-semibold font-headline">Model Configuration</h3>
+                                    <Form {...aiConfigForm}>
+                                        <form onSubmit={aiConfigForm.handleSubmit(onAiConfigSave)} className="space-y-4">
+                                            {isAiConfigLoading ? (
+                                                <div className="space-y-4">
+                                                    <Skeleton className="h-10 w-full" />
+                                                    <Skeleton className="h-10 w-full" />
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <FormField
+                                                        control={aiConfigForm.control}
+                                                        name="provider"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>AI Provider</FormLabel>
+                                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                                    <FormControl>
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Select an AI provider" />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="google">Google Gemini</SelectItem>
+                                                                        <SelectItem value="openai">OpenAI</SelectItem>
+                                                                        <SelectItem value="anthropic">Anthropic Claude</SelectItem>
+                                                                        <SelectItem value="deepseek">DeepSeek</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={aiConfigForm.control}
+                                                        name="model"
+                                                        render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>AI Provider</FormLabel>
+                                                            <FormLabel>Language Model</FormLabel>
                                                             <Select onValueChange={field.onChange} value={field.value}>
                                                                 <FormControl>
                                                                     <SelectTrigger>
-                                                                        <SelectValue placeholder="Select an AI provider" />
+                                                                        <SelectValue placeholder="Select a model" />
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent>
-                                                                    <SelectItem value="google">Google Gemini</SelectItem>
-                                                                    <SelectItem value="openai">OpenAI</SelectItem>
-                                                                    <SelectItem value="anthropic">Anthropic Claude</SelectItem>
-                                                                    <SelectItem value="deepseek">DeepSeek</SelectItem>
+                                                                    {(providerModels[watchedAiProvider as keyof typeof providerModels] || []).map((model) => (
+                                                                        <SelectItem key={model.value} value={model.value} disabled={model.disabled}>
+                                                                            {model.label}
+                                                                        </SelectItem>
+                                                                    ))}
                                                                 </SelectContent>
                                                             </Select>
                                                             <FormMessage />
                                                         </FormItem>
                                                     )}
-                                                />
-                                                <FormField
-                                                    control={aiConfigForm.control}
-                                                    name="model"
-                                                    render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Language Model</FormLabel>
-                                                        <Select onValueChange={field.onChange} value={field.value}>
-                                                            <FormControl>
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder="Select a model" />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent>
-                                                                {(providerModels[watchedAiProvider as keyof typeof providerModels] || []).map((model) => (
-                                                                    <SelectItem key={model.value} value={model.value} disabled={model.disabled}>
-                                                                        {model.label}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                                />
-                                                {watchedAiProvider !== "google" && (
-                                                    <Controller
-                                                        control={aiConfigForm.control}
-                                                        name="apiKey"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>API Key</FormLabel>
-                                                                <FormControl>
-                                                                    {field.value ? (
-                                                                        <MaskedApiKey apiKey={field.value} />
-                                                                    ) : (
-                                                                        <Input type="password" placeholder="Your API Key" {...field} />
-                                                                    )}
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
                                                     />
-                                                )}
-                                            </>
-                                        )}
-                                    </CardContent>
-                                     <CardFooter>
-                                        <Button type="submit" disabled={aiConfigForm.formState.isSubmitting || isAiConfigLoading}>
-                                            {aiConfigForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Save AI Configuration
-                                        </Button>
-                                    </CardFooter>
-                                </form>
-                            </Form>
+                                                    {watchedAiProvider !== "google" && (
+                                                        <Controller
+                                                            control={aiConfigForm.control}
+                                                            name="apiKey"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>API Key</FormLabel>
+                                                                    <FormControl>
+                                                                        {field.value ? (
+                                                                            <MaskedApiKey apiKey={field.value} />
+                                                                        ) : (
+                                                                            <Input type="password" placeholder="Your API Key" {...field} />
+                                                                        )}
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    )}
+                                                </>
+                                            )}
+                                            <Button type="submit" disabled={aiConfigForm.formState.isSubmitting || isAiConfigLoading} className="w-full">
+                                                {aiConfigForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                Save AI Configuration
+                                            </Button>
+                                        </form>
+                                    </Form>
+                                </div>
+                                <div className="space-y-6">
+                                    <h3 className="text-lg font-semibold font-headline">Proactive Recommendations</h3>
+                                    <Card className="bg-muted/50">
+                                        <CardContent className="p-6 text-center text-muted-foreground flex flex-col items-center justify-center h-full">
+                                            <Bot className="w-10 h-10 mb-4" />
+                                            <p className="font-medium">AI Recommendation Engine</p>
+                                            <p className="text-sm">This AI will analyze your profile and market data to provide personalized suggestions.</p>
+                                            <Button variant="secondary" className="mt-4" disabled>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Coming Soon
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </div>
                         </AccordionContent>
                     </Card>
                 </AccordionItem>
@@ -885,3 +900,5 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+    
