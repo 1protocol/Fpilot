@@ -9,3 +9,4 @@ import '@/ai/flows/predict-market-regime.ts';
 import '@/ai/flows/generate-trading-signal.ts';
 import '@/ai/flows/extract-strategy-parameters.ts';
 import '@/ai/flows/run-backtest-simulation.ts';
+import '@/ai/flows/apply-tuned-parameters.ts';

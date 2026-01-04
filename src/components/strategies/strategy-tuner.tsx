@@ -4,15 +4,18 @@ import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { automatedStrategyParameterTuning, extractStrategyParameters, type AutomatedStrategyParameterTuningOutput } from '@/services/strategyService';
+import { automatedStrategyParameterTuning, extractStrategyParameters, applyTunedParameters, type AutomatedStrategyParameterTuningOutput } from '@/services/strategyService';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { Bot, Loader2 } from 'lucide-react';
+import { Bot, Loader2, Sparkles } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Card, CardContent } from '../ui/card';
+import { Card, CardContent, CardFooter } from '../ui/card';
 import type { Strategy } from './strategy-list';
 import { useToast } from '@/hooks/use-toast';
+import { useFirebase, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Separator } from '../ui/separator';
 
 const formSchema = z.object({
   marketConditions: z.string().min(1, { message: "Market conditions are required." }),
@@ -26,9 +29,11 @@ type StrategyTunerProps = {
 
 export default function StrategyTuner({ strategy, children }: StrategyTunerProps) {
   const [open, setOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isTuning, startTuningTransition] = useTransition();
+  const [isApplying, startApplyingTransition] = useTransition();
   const [result, setResult] = useState<AutomatedStrategyParameterTuningOutput | null>(null);
   const { toast } = useToast();
+  const { firestore, user } = useFirebase();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,7 +53,7 @@ export default function StrategyTuner({ strategy, children }: StrategyTunerProps
         return;
     }
 
-    startTransition(async () => {
+    startTuningTransition(async () => {
       setResult(null);
       try {
         // Step 1: Extract parameters dynamically from the code
@@ -63,12 +68,10 @@ export default function StrategyTuner({ strategy, children }: StrategyTunerProps
             return;
         }
 
-        // Convert the min/max structure to a string representation for the next flow
         const parameterConstraints = Object.entries(extractedParams).reduce((acc, [key, value]) => {
             acc[key] = `${value.min}-${value.max}`;
             return acc;
         }, {} as Record<string, any>);
-
 
         // Step 2: Run the optimization with the extracted parameters
         const tuningResult = await automatedStrategyParameterTuning({
@@ -88,6 +91,35 @@ export default function StrategyTuner({ strategy, children }: StrategyTunerProps
       }
     });
   };
+
+  const handleApplyParameters = () => {
+    if (!strategy.code || !result?.optimalParameters || !user || !firestore) return;
+    
+    startApplyingTransition(async () => {
+        try {
+            const { updatedStrategyCode } = await applyTunedParameters({
+                strategyCode: strategy.code!,
+                optimalParameters: result.optimalParameters
+            });
+            
+            const strategyDocRef = doc(firestore, 'users', user.uid, 'strategies', strategy.id);
+            setDocumentNonBlocking(strategyDocRef, { code: updatedStrategyCode }, { merge: true });
+
+            toast({
+                title: "Strategy Updated!",
+                description: "The optimized parameters have been saved to your strategy.",
+            });
+            setOpen(false); // Close the dialog on success
+        } catch (error) {
+             console.error("Failed to apply parameters:", error);
+            toast({
+              variant: "destructive",
+              title: "Failed to Apply Parameters",
+              description: "The AI failed to update the strategy code. Please try again.",
+          });
+        }
+    });
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -141,31 +173,32 @@ export default function StrategyTuner({ strategy, children }: StrategyTunerProps
                     </FormItem>
                   )}
                 />
-                <Button type="submit" disabled={isPending} className="w-full">
-                  {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Optimizing...</> : <><Bot className="mr-2 h-4 w-4" /> Tune Parameters</>}
+                <Button type="submit" disabled={isTuning} className="w-full">
+                  {isTuning ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Optimizing...</> : <><Bot className="mr-2 h-4 w-4" /> Tune Parameters</>}
                 </Button>
               </form>
             </Form>
           </div>
-          <Card>
-            <CardContent className="pt-6 h-full">
-            {isPending ? (
+          <Card className="flex flex-col">
+            <CardContent className="pt-6 h-full flex-1 flex flex-col">
+            {isTuning ? (
               <div className="flex h-full items-center justify-center text-muted-foreground">
                 <div className="text-center space-y-2"><Loader2 className="mx-auto h-8 w-8 animate-spin" /><p>Finding optimal parameters...</p></div>
               </div>
             ) : result ? (
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold text-sm">Optimal Parameters</h4>
-                  <pre className="mt-1 bg-muted p-3 rounded-md text-xs font-mono">{JSON.stringify(result.optimalParameters, null, 2)}</pre>
+              <div className="space-y-4 flex-1 flex flex-col">
+                <div className="flex-1 space-y-4">
+                    <div>
+                        <h4 className="font-semibold text-sm">Optimal Parameters</h4>
+                        <pre className="mt-1 bg-muted p-3 rounded-md text-xs font-mono">{JSON.stringify(result.optimalParameters, null, 2)}</pre>
+                    </div>
+                    <div>
+                        <h4 className="font-semibold text-sm">Tuning Rationale</h4>
+                        <p className="text-xs text-muted-foreground mt-1">{result.tuningRationale}</p>
+                    </div>
                 </div>
-                 <div>
-                  <h4 className="font-semibold text-sm">Tuning Rationale</h4>
-                  <p className="text-xs text-muted-foreground mt-1">{result.tuningRationale}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm">Expected Performance Gain</h4>
-                  <p className="text-xs text-muted-foreground mt-1">AI projects an uplift of {result.expectedPerformance.toFixed(2)} in {form.getValues("performanceMetric")}.</p>
+                 <div className="text-xs text-muted-foreground">
+                  AI projects an uplift of {result.expectedPerformance.toFixed(2)} in {form.getValues("performanceMetric")}.
                 </div>
               </div>
             ) : (
@@ -174,6 +207,20 @@ export default function StrategyTuner({ strategy, children }: StrategyTunerProps
               </div>
             )}
             </CardContent>
+            {result && (
+                <>
+                <Separator />
+                <CardFooter className="pt-4">
+                     <Button 
+                        onClick={handleApplyParameters} 
+                        disabled={isApplying || isTuning}
+                        className="w-full"
+                    >
+                        {isApplying ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Applying...</> : <><Sparkles className="mr-2 h-4 w-4" /> Apply Optimized Parameters</>}
+                    </Button>
+                </CardFooter>
+                </>
+            )}
           </Card>
         </div>
       </DialogContent>
