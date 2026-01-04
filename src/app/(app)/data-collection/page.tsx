@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Banknote, CandlestickChart, Link as LinkIcon, Newspaper, Rss, Twitter } from "lucide-react";
+import { Banknote, CandlestickChart, Link as LinkIcon, Newspaper, Rss, Twitter, Sigma } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useFirebase, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
@@ -34,7 +34,17 @@ const dataSourceTemplates: DataSourceTemplate[] = [
             { id: 'binance', name: "Binance" },
             { id: 'bybit', name: "Bybit" },
             { id: 'coinbase', name: "Coinbase" },
+        ]
+    },
+    {
+        id: 'derivatives',
+        title: "Derivatives Intelligence",
+        description: "Funding rates, open interest, and long/short ratios from derivatives exchanges.",
+        icon: Sigma,
+        subSources: [
             { id: 'deribit', name: "Deribit" },
+            { id: 'binance-futures', name: "Binance Futures" },
+            { id: 'bybit-perp', name: "Bybit Perpetuals" },
         ]
     },
     {
