@@ -6,22 +6,22 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { generateTradingSignal, type GenerateTradingSignalOutput } from '@/services/analyticsService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormField } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Bot, Loader2, Target, TrendingUp, TrendingDown, Pause } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '../ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Textarea } from '../ui/textarea';
+import { Skeleton } from '../ui/skeleton';
 
 const formSchema = z.object({
-  strategyType: z.string().min(1, "Please select a strategy."),
-  riskLevel: z.string().min(1, "Please select a risk level."),
   cryptocurrency: z.string().min(1, "Please select a cryptocurrency."),
 });
 
 const cryptocurrencies = ['Bitcoin', 'Ethereum', 'Solana'];
-const strategies = ['Momentum', 'Mean Reversion', 'Arbitrage'];
-const riskLevels = ['Low', 'Medium', 'High'];
 
 const SignalIcon = ({ signal }: { signal: GenerateTradingSignalOutput['signal'] }) => {
     switch (signal) {
@@ -34,16 +34,37 @@ const SignalIcon = ({ signal }: { signal: GenerateTradingSignalOutput['signal'] 
     }
 }
 
+const exampleStrategyCode = `// Simple RSI Mean-Reversion Strategy
+const rsi = RSI(close, 14);
+const rsiUpper = 70;
+const rsiLower = 30;
+
+if (crossesOver(rsi, rsiUpper)) {
+    return 'Sell';
+}
+
+if (crossesUnder(rsi, rsiLower)) {
+    return 'Buy';
+}
+
+return 'Hold';
+`;
+
 export default function SignalGenerator() {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<GenerateTradingSignalOutput | null>(null);
   const { toast } = useToast();
+  const { user, firestore, isUserLoading } = useFirebase();
+
+  const riskProfileDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'users', user.uid, 'risk_profiles', 'default');
+  }, [user, firestore]);
+  const { data: riskProfileData, isLoading: isRiskProfileLoading } = useDoc(riskProfileDocRef);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      strategyType: "Momentum",
-      riskLevel: "Medium",
       cryptocurrency: "Bitcoin",
     },
   });
@@ -51,11 +72,17 @@ export default function SignalGenerator() {
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     startTransition(async () => {
       setResult(null);
+      
+      const userRiskProfile = riskProfileData || { valueAtRisk: 5, maxPositionSize: 25 };
+
       try {
         const res = await generateTradingSignal({ 
-          strategyType: values.strategyType as any,
-          riskLevel: values.riskLevel as any,
-          cryptocurrency: values.cryptocurrency
+          cryptocurrency: values.cryptocurrency,
+          strategyCode: exampleStrategyCode, // Using example code for this component
+          riskProfile: {
+            valueAtRisk: userRiskProfile.valueAtRisk,
+            maxPositionSize: userRiskProfile.maxPositionSize,
+          }
         });
         setResult(res);
       } catch (error) {
@@ -69,36 +96,44 @@ export default function SignalGenerator() {
     });
   };
 
+  const isLoading = isUserLoading || isRiskProfileLoading;
+
   return (
     <Card className="flex flex-col">
       <CardHeader>
         <CardTitle className="font-headline text-xl">AI Signal Generation</CardTitle>
-        <CardDescription>Generate dynamic, risk-adjusted trading signals.</CardDescription>
+        <CardDescription>Generate dynamic, context-aware trading signals based on a strategy and your risk profile.</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col justify-between space-y-6">
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <FormField control={form.control} name="cryptocurrency" render={({ field }) => (
-                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger><SelectValue placeholder="Crypto" /></SelectTrigger>
-                            <SelectContent>{cryptocurrencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                        </Select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <FormField control={form.control} name="cryptocurrency" render={({ field }) => (
+                         <FormItem>
+                            <FormLabel>Cryptocurrency</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger><SelectValue placeholder="Crypto" /></SelectTrigger>
+                                </FormControl>
+                                <SelectContent>{cryptocurrencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                            </Select>
+                         </FormItem>
                     )} />
-                    <FormField control={form.control} name="strategyType" render={({ field }) => (
-                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger><SelectValue placeholder="Strategy" /></SelectTrigger>
-                            <SelectContent>{strategies.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                        </Select>
-                    )} />
-                    <FormField control={form.control} name="riskLevel" render={({ field }) => (
-                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger><SelectValue placeholder="Risk Level" /></SelectTrigger>
-                            <SelectContent>{riskLevels.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-                        </Select>
-                    )} />
+                     <FormItem>
+                        <FormLabel>Your Risk Profile</FormLabel>
+                        {isLoading ? <Skeleton className="h-10 w-full"/> : (
+                        <div className="flex items-center justify-between h-10 px-3 py-2 text-sm border rounded-md text-muted-foreground">
+                            <span>VaR: {riskProfileData?.valueAtRisk ?? 'N/A'}%</span>
+                            <span>Max Size: {riskProfileData?.maxPositionSize ?? 'N/A'}%</span>
+                        </div>
+                        )}
+                    </FormItem>
                 </div>
-                <Button type="submit" disabled={isPending} className="w-full">
+                 <div>
+                    <FormLabel>Strategy Logic (Example)</FormLabel>
+                    <Textarea readOnly value={exampleStrategyCode} className="mt-2 font-mono text-xs h-36 resize-none bg-muted/50" />
+                </div>
+                <Button type="submit" disabled={isPending || isLoading} className="w-full">
                 {isPending ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generating Signal...</>
                 ) : (
@@ -130,8 +165,7 @@ export default function SignalGenerator() {
                 </div>
                 <div className="flex gap-2 justify-center">
                     <Badge variant="outline">{form.getValues("cryptocurrency")}</Badge>
-                    <Badge variant="secondary">{form.getValues("strategyType")}</Badge>
-                    <Badge variant="secondary">{form.getValues("riskLevel")} Risk</Badge>
+                    <Badge variant="secondary">RSI Mean Reversion</Badge>
                 </div>
             </div>
           ) : (

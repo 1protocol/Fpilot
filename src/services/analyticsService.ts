@@ -17,6 +17,8 @@ import {
   type GenerateTradingSignalOutput,
 } from '@/ai/flows/generate-trading-signal';
 
+export { type GenerateTradingSignalInput, type GenerateTradingSignalOutput };
+
 /**
  * Predicts the market regime for a given cryptocurrency.
  *

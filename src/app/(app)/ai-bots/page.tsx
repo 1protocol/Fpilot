@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Play, Pause, Trash2, Bot, PlusCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirebase, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking, useDoc } from '@/firebase';
 import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import type { Strategy } from '@/components/strategies/strategy-list';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -51,6 +51,13 @@ export default function AiBotsPage() {
     const tradeOrdersCollectionRef = useMemoFirebase(() =>
         (user && firestore) ? collection(firestore, 'users', user.uid, 'trade_orders') : null
     , [user, firestore]);
+    
+    const riskProfileDocRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return doc(firestore, 'users', user.uid, 'risk_profiles', 'default');
+    }, [user, firestore]);
+    const { data: riskProfileData } = useDoc(riskProfileDocRef);
+
 
     // --- State Management for Bot Creation ---
     const [newBotName, setNewBotName] = useState('');
@@ -70,7 +77,7 @@ export default function AiBotsPage() {
     useEffect(() => {
         const interval = setInterval(() => {
             localBots.forEach(async (bot) => {
-                if (bot.status === 'Active' && user && firestore && tradeOrdersCollectionRef) {
+                if (bot.status === 'Active' && user && firestore && tradeOrdersCollectionRef && strategies) {
                     // 1. Simulate P&L change
                     const pnlChange = (Math.random() - 0.45) * 10;
                     const newPnl = bot.pnl + pnlChange;
@@ -84,11 +91,23 @@ export default function AiBotsPage() {
 
                     // 2. ~20% chance to generate a trading signal every interval
                     if (Math.random() < 0.2) {
+                        const strategy = strategies.find(s => s.id === bot.strategyId);
+                        if (!strategy || !strategy.code) {
+                            console.error(`Bot ${bot.name} is missing its strategy or strategy code.`);
+                            return;
+                        }
+                        
+                        // Fallback to a default risk profile if not loaded
+                        const userRiskProfile = riskProfileData || { valueAtRisk: 5, maxPositionSize: 25 };
+
                         try {
                             const signal = await generateTradingSignal({
-                                cryptocurrency: bot.asset.split('/')[0], // e.g., 'BTC' from 'BTC/USDT'
-                                riskLevel: 'Medium', // Placeholder
-                                strategyType: 'Momentum', // Placeholder
+                                cryptocurrency: bot.asset,
+                                strategyCode: strategy.code,
+                                riskProfile: {
+                                    valueAtRisk: userRiskProfile.valueAtRisk,
+                                    maxPositionSize: userRiskProfile.maxPositionSize,
+                                }
                             });
                             
                             if (signal.signal !== 'Hold') {
@@ -111,6 +130,11 @@ export default function AiBotsPage() {
                             }
                         } catch (e) {
                             console.error(`Bot ${bot.name} failed to generate a signal:`, e);
+                             toast({
+                                variant: 'destructive',
+                                title: `Bot Error: ${bot.name}`,
+                                description: "Failed to generate a trading signal.",
+                            });
                         }
                     }
                 }
@@ -119,11 +143,11 @@ export default function AiBotsPage() {
 
         return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [localBots, firestore, user, tradeOrdersCollectionRef]);
+    }, [localBots, firestore, user, tradeOrdersCollectionRef, strategies, riskProfileData]);
 
     // --- Handlers ---
     const handleCreateBot = async () => {
-        if (!user || !firestore || !newBotName || !selectedStrategyId) {
+        if (!user || !firestore || !botsCollectionRef || !newBotName || !selectedStrategyId) {
             toast({ variant: "destructive", title: "Missing Information", description: "Please provide a name and select a strategy." });
             return;
         }
@@ -136,7 +160,7 @@ export default function AiBotsPage() {
 
         setIsCreating(true);
         try {
-            await addDocumentNonBlocking(botsCollectionRef!, {
+            await addDocumentNonBlocking(botsCollectionRef, {
                 name: newBotName,
                 strategyId: selectedStrategy.id,
                 strategyName: selectedStrategy.name,
