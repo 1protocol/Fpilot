@@ -355,6 +355,35 @@
         }
       },
       "required": ["userId", "exchange", "publicKey", "status"]
+    },
+    "DataSourceConfig": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DataSourceConfig",
+      "type": "object",
+      "description": "Stores a user's configuration for a specific data source.",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this configuration."
+        },
+        "sourceId": {
+          "type": "string",
+          "description": "A unique identifier for the data source (e.g., 'market-data', 'social-media')."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether the user has this data source enabled."
+        },
+        "subSourceStatuses": {
+          "type": "object",
+          "description": "An object holding the simulated status of each sub-source.",
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["Operational", "Degraded", "Error"]
+          }
+        }
+      },
+      "required": ["userId", "sourceId", "enabled"]
     }
   },
   "auth": {
@@ -529,6 +558,26 @@
             {
               "name": "apiKeyId",
               "description": "The API key's unique ID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/data_source_configs/{configId}",
+        "definition": {
+          "entityName": "DataSourceConfig",
+          "schema": {
+            "$ref": "#/backend/entities/DataSourceConfig"
+          },
+          "description": "Stores a user's configurations for data sources, like enabling or disabling them. Access is restricted to the user themselves.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The user's unique ID."
+            },
+            {
+              "name": "configId",
+              "description": "The unique ID for the data source configuration (e.g., 'market-data')."
             }
           ]
         }
