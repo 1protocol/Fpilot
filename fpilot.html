@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPILOT: Piyasayı Değil, Sistemi Yönetin.</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+
+        :root {
+            --background: #0d0d0d;
+            --foreground: #e5e5e5;
+            --card: #1a1a1a;
+            --border: #262626;
+            --accent: #2dd4bf;
+            --accent-foreground: #032a25;
+            --muted-foreground: #a3a3a3;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--foreground);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 3rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--foreground);
+            letter-spacing: -0.05em;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-top: 3rem;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: var(--muted-foreground);
+            margin-bottom: 1.5rem;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        li {
+            padding-left: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        strong {
+            color: var(--foreground);
+            font-weight: 700;
+        }
+
+        code {
+            background-color: rgba(45, 212, 191, 0.1);
+            color: var(--accent);
+            padding: 0.2em 0.4em;
+            border-radius: 0.3rem;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            .container {
+                padding: 1.5rem;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            h2 {
+                font-size: 1.5rem;
+            }
+            p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FPILOT: Piyasayı Değil, Sistemi Yönetin.</h1>
+        <p>FPILOT size bir trading arayüzü sunmaz. Size, piyasanın kaosunu kendi kurallarınızla yönetebileceğiniz, yapay zeka destekli, kişisel bir operasyon merkezi kurma ayrıcalığı tanır. Burada pasif bir kullanıcı değil, kendi trading felsefenizi koda döken, riskinizi bizzat tanımlayan ve botlardan oluşan ordunuzu yöneten bir <strong>sistem operatörüsünüz</strong>.</p>
+
+        <h2>Hipotezden Likiditeye: Fikir ve Uygulama Arasındaki Sıfır Gecikme</h2>
+        <p>Piyasadaki en büyük avantaj, bir fikri herkesten önce test edip uygulamaya koyabilmektir.</p>
+        <ul>
+            <li><strong>Siz Formüle Edin, AI Kodlasın:</strong> <code>Stratejiler</code> bölümünde, aklınızdaki herhangi bir trading hipotezini ("Yüksek volatilitede, hacim artışıyla teyitlenmiş RSI sapmalarını oyna") doğal dille yazın. AI, saniyeler içinde bu hipotezi test edilebilir bir Typescript stratejisine dönüştürsün.</li>
+            <li><strong>Avantajınızı Keskinleştirin:</strong> Mevcut bir stratejinizin kodunu AI'a verin. <code>Tune with AI</code> ile piyasanın mevcut rejimine göre hangi parametrelerin (periyotlar, eşikler, yüzde oranları) en optimal sonucu vereceğini size kanıtlarıyla sunsun.</li>
+            <li><strong>Tek Tuşla Güncelleyin:</strong> AI'ın bulduğu "optimal" parametreleri, "Apply" butonuyla anında strateji kodunuza kalıcı olarak işleyin. Teori biter, aksiyon başlar.</li>
+            <li><strong>Simülasyondan Canlıya Geçin:</strong> Optimize ettiğiniz stratejinin geçmiş performansını <code>Backtesting</code> motorunda doğrulayın. Sonuçlar tatmin edici mi? "Launch as AI Bot" ile o stratejiyi saniyeler içinde canlı piyasada çalışan otonom bir bota dönüştürün.</li>
+        </ul>
+
+        <h2>Kişisel Algo-Masanız: Bot Ordunuz</h2>
+        <p>Geliştirdiğiniz her strateji, <code>AI Botlar</code> sayfasında sizin adınıza pozisyon alan, emirleri yöneten ve 7/24 piyasayı tarayan bir operasyon birimine dönüşür. Her bir botun anlık kâr/zarar (P&L) durumunu, çalışma süresini ve ürettiği tüm sinyalleri ham ve şeffaf bir şekilde izleyin.</p>
+
+        <h2>Mutlak Kontrol: Burası Sizin Operasyon Merkeziniz</h2>
+        <ul>
+            <li><strong>Risk Tanımı Size Aittir:</strong> <code>Ayarlar</code> bölümünde, kendi risk iştahınızı (Value at Risk, Max Position Size vb.) siz tanımlarsınız. AI botlarınız, sinyal üretirken bu kurallara bir asker gibi itaat eder. Kararlar kişiseldir.</li>
+            <li><strong>AI'ın Beynini Siz Seçin:</strong> Hangi AI sağlayıcısını (Google Gemini, OpenAI vb.) ve hangi dil modelini kullanacağınız sizin seçiminizdir. Sistemin zeka katmanını, kendi analitik yaklaşımınıza en uygun şekilde yapılandırın.</li>
+            <li><strong>Veri Akışını Siz Yönetin:</strong> <code>Data Collection Engine</code> sayfasında, AI'ın analiz yaparken hangi veri setlerini (Piyasa verisi, Türev verileri, Makroekonomik göstergeler) kullanacağını veya göz ardı edeceğini interaktif anahtarlarla siz belirlersiniz. Analizin çerçevesini siz çizersiniz.</li>
+        </ul>
+        
+        <h2>Piyasanın Bir Adım Önünde: AI Analiz Motoru</h2>
+        <ul>
+            <li><strong>Rejim Tespiti:</strong> <code>Analytics Engine</code> içinde, seçtiğiniz bir varlık için piyasanın mevcut rejimini (Boğa, Ayı, Yatay) gerekçesi ve güven skoruyla birlikte AI'a tahmin ettirin.</li>
+            <li><strong>Anlık Sinyal Üretimi:</strong> Kendi strateji mantığınız ve risk profiliniz doğrultusunda, anlık "Al/Sat/Tut" sinyalleri ve gerçekçi hedef fiyatlar ürettirin.</li>
+        </ul>
+
+        <p>FPILOT ile piyasayı tahmin etmeye çalışmazsınız. Piyasanın her koşuluna uyum sağlayacak, kendi kurallarınızla çalışan, akıllı bir <strong>sistem</strong> kurar ve onu yönetirsiniz. Kontrol sizde.</p>
+    </div>
+</body>
+</html>
