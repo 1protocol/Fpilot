@@ -1,8 +1,21 @@
-import { redirect } from 'next/navigation';
+'use client';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 export default function Home() {
-  // Redirect to the dashboard as the main landing page for authenticated users,
-  // or to the login page for new users. The logic in app/(app)/layout.tsx
-  // and the middleware will handle the final destination.
-  redirect('/dashboard');
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/dashboard');
+  }, [router]);
+
+  return (
+    <div className="flex h-screen w-full flex-col items-center justify-center bg-background text-foreground">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <p className="text-lg">Loading FPILOT...</p>
+      </div>
+    </div>
+  );
 }
