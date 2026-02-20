@@ -90,7 +90,3 @@ Platformun ve kullanıcı hesabının tüm ayarlarının yönetildiği bölüm.
 - **Uluslararasılaşma (i18n):** React Context ve JSON tabanlı özel lokalizasyon altyapısı.
 
 ---
-
-## Projeye Başlarken
-
-Bu proje bir Firebase Studio başlangıç projesidir. Başlamak için platformu keşfetmeye başlayın. Proje, canlı veri akışlarını simüle eden ve tüm yapay zeka özelliklerinin çalışır durumda olduğu bir yapılandırma ile gelir.
